@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NUnit.Extension.DeepCompare", "NUnit.Extension.DeepCompare\NUnit.Extension.DeepCompare.csproj", "{ADFB8528-2567-440F-8954-87593AFBE72E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NUnit.Extension.DeepCompare.Tests", "NUnit.Extension.DeepCompare.Tests\NUnit.Extension.DeepCompare.Tests.csproj", "{89051B48-6D3F-40B9-8962-219363CEF5B9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ADFB8528-2567-440F-8954-87593AFBE72E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADFB8528-2567-440F-8954-87593AFBE72E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADFB8528-2567-440F-8954-87593AFBE72E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADFB8528-2567-440F-8954-87593AFBE72E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89051B48-6D3F-40B9-8962-219363CEF5B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89051B48-6D3F-40B9-8962-219363CEF5B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89051B48-6D3F-40B9-8962-219363CEF5B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89051B48-6D3F-40B9-8962-219363CEF5B9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D7211861-F565-4C1B-B0C6-3ECBC24DAAB8}
+	EndGlobalSection
+EndGlobal
