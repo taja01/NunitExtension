@@ -109,21 +109,21 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             public bool IsSuccess { get; set; }
 
-            public string Message { get; set; }
+            public string? Message { get; set; }
 
-            public List<int> Numbers { get; set; }
+            public List<int>? Numbers { get; set; }
 
-            public List<string> Strings { get; set; }
+            public List<string>? Strings { get; set; }
 
             public Method? Method { get; set; }
 
-            public InnerMessage InnerMessage { get; set; }
+            public InnerMessage? InnerMessage { get; set; }
 
         }
 
         private class InnerMessage
         {
-            public string Message { get; set; }
+            public string? Message { get; set; }
         }
 
         enum Method
