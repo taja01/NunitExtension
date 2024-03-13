@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace NUnit.Extension.DeepCompare.Tests
+namespace DeepCompare.NUnitExtension.Tests
 {
     [TestFixture]
     public class CollectionTests

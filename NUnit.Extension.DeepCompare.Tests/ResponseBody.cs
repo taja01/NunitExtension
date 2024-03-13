@@ -1,4 +1,4 @@
-﻿namespace NUnit.Extension.DeepCompare.Tests
+﻿namespace DeepCompare.NUnitExtension.Tests
 {
     internal class ResponseBody
     {

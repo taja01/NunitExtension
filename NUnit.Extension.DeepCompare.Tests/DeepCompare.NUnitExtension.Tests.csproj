@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NUnit.Extension.DeepCompare\NUnit.Extension.DeepCompare.csproj" />
+    <ProjectReference Include="..\NUnit.Extension.DeepCompare\DeepCompare.NUnitExtension.csproj" />
   </ItemGroup>
 
 </Project>

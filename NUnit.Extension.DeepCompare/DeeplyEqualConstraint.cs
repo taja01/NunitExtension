@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework.Constraints;
 using System.Collections;
 
-namespace NUnit.Extension.DeepCompare
+namespace DeepCompare.NUnitExtension
 {
     /// <summary>
     /// A custom constraint class that checks if two objects are deeply equal
@@ -109,8 +109,8 @@ namespace NUnit.Extension.DeepCompare
                     //}
 
                     // Get the values of the expected and actual properties
-                    var expectedValue = expectedProperty.ReflectedType.Name.Equals(nameof(System.String)) ? expected : expectedProperty.GetValue(expected);
-                    var actualValue = actualProperty.ReflectedType.Name.Equals(nameof(System.String)) ? actual : actualProperty.GetValue(actual);
+                    var expectedValue = expectedProperty.ReflectedType.Name.Equals(nameof(String)) ? expected : expectedProperty.GetValue(expected);
+                    var actualValue = actualProperty.ReflectedType.Name.Equals(nameof(String)) ? actual : actualProperty.GetValue(actual);
 
                     // If both values are null, they are equal, so continue to the next property
                     if (expectedValue == null && actualValue == null)

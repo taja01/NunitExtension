@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework.Constraints;
 
-namespace NUnit.Extension.DeepCompare
+namespace DeepCompare.NUnitExtension
 {
     /// <summary>
     /// Represents the result of applying a DeeplyEqualConstraint to an actual value.
