@@ -71,7 +71,7 @@ namespace NUnit.Extension.DeepCompare.Tests
                 Method = Method.POST,
                 StatusCode = 202,
                 InnerMessage = new InnerMessage { Message = "Test" },
-                Numbers = new[] { 1, 2, 3, 4, 5, 6 }
+                Numbers = [1, 2, 3, 4, 5, 6]
             };
 
             var response2 = new ResponseBody
@@ -81,7 +81,7 @@ namespace NUnit.Extension.DeepCompare.Tests
                 Method = Method.POST,
                 StatusCode = 200,
                 InnerMessage = new InnerMessage { Message = "Dev" },
-                Numbers = new[] { 7, 6, 5, 4, 3, 2, 1 }
+                Numbers = [7, 6, 5, 4, 3, 2, 1]
             };
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(response1, Matches.DeeplyWith(response2)));

@@ -31,6 +31,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'IsSuccess' mismatch: Expected 'False', but was 'True'."));
         }
 
@@ -42,7 +43,9 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 2. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'Strings.[1].Chars' mismatch: Expected '34', but was '44'."));
+            Assert.That(ex.Message, Does.Contain("Property 'Strings.[1].Length' mismatch: Expected '34', but was '44'."));
         }
 
         [Test]
@@ -53,7 +56,9 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 2. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'Numbers.[0].' mismatch: Expected '3', but was '1'."));
+            Assert.That(ex.Message, Does.Contain("Property 'Numbers.[2].' mismatch: Expected '1', but was '3'."));
         }
 
         [Test]
@@ -75,6 +80,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'Method' mismatch: Expected 'null', but was 'GET'."));
         }
 
@@ -100,6 +106,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'InnerMessage.Message' mismatch: Expected 'Waiting', but was 'Done'."));
         }
     }

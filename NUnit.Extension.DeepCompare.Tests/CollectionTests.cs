@@ -42,6 +42,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'System.Reflection.PropertyInfo[].[2].' mismatch: Expected 'Empty', but was 'null'"));
         }
 
@@ -53,6 +54,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'System.Reflection.PropertyInfo[].[2].' mismatch: Expected 'null', but was 'Empty'"));
         }
 
@@ -64,6 +66,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'System.Reflection.PropertyInfo[].Count' mismatch: Expected 'Count 3', but was 'Count 4'."));
         }
 
@@ -84,6 +87,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'System.Reflection.PropertyInfo[].[3].' mismatch: Expected '4', but was 'null'."));
         }
 
@@ -95,6 +99,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'System.Reflection.PropertyInfo[].[3].' mismatch: Expected 'null', but was '4'."));
         }
 
@@ -115,6 +120,7 @@ namespace NUnit.Extension.DeepCompare.Tests
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList)));
 
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'System.Reflection.PropertyInfo[].[3].' mismatch: Expected '-', but was '+'."));
         }
     }
