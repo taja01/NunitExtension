@@ -7,7 +7,9 @@ namespace NUnit.Extension.DeepCompare
     /// </summary>
     public class DeeplyEqualConstraintResult : ConstraintResult
     {
-        private readonly (bool Success, string PropertyName, object ExpectedValue, object ActualValue) _comparisonResult;
+        public int ErrorCount => _comparisonResult.Count(x => !x.Success);
+
+        private readonly List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> _comparisonResult;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeeplyEqualConstraintResult"/> class.
@@ -15,8 +17,9 @@ namespace NUnit.Extension.DeepCompare
         /// <param name="constraint">The constraint that was applied.</param>
         /// <param name="actualValue">The actual value to which the constraint was applied.</param>
         /// <param name="comparisonResult">The result of the deep equality comparison.</param>
-        public DeeplyEqualConstraintResult(IConstraint constraint, object actualValue, (bool success, string propertyName, object expectedValue, object actualValue) comparisonResult)
-            : base(constraint, actualValue, comparisonResult.success)
+        public DeeplyEqualConstraintResult(IConstraint constraint, object actualValue, List<(bool success, string propertyName, object expectedValue, object actualValue)> comparisonResult)
+            : base(constraint, actualValue, comparisonResult.All(x => x.success))
+
         {
             _comparisonResult = comparisonResult;
         }
@@ -43,12 +46,19 @@ namespace NUnit.Extension.DeepCompare
             }
 
             // If the comparison result is not successful, write a message to the writer
-            if (!_comparisonResult.Success)
+            if (_comparisonResult.All(x => x.Success))
+            {
+                return;
+            }
+
+            writer.WriteLine($"Differences found: {_comparisonResult.Count()}. The details are as follows:");
+
+            foreach (var result in _comparisonResult.Where(x => !x.Success))
             {
                 // Use the ternary operator to choose between two messages
-                string message = string.IsNullOrEmpty(_comparisonResult.PropertyName)
-                    ? $"Mismatch: Expected '{_comparisonResult.ExpectedValue}', but was '{_comparisonResult.ActualValue}'."
-                    : $"Property '{_comparisonResult.PropertyName}' mismatch: Expected '{StringHelper(_comparisonResult.ExpectedValue)}', but was '{StringHelper(_comparisonResult.ActualValue)}'.";
+                string message = string.IsNullOrEmpty(result.PropertyName)
+                    ? $"Mismatch: Expected '{result.ExpectedValue}', but was '{result.ActualValue}'."
+                    : $"Property '{result.PropertyName}' mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'.";
 
                 // Write the message to the writer
                 writer.WriteLine(message);

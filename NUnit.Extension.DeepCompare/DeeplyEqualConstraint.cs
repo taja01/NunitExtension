@@ -35,18 +35,20 @@ namespace NUnit.Extension.DeepCompare
         /// <param name="actual">The actual object to compare with</param>
         /// <param name="parentPropertyName">The name of the parent property that contains the objects</param>
         /// <returns>A tuple of four values: a boolean indicating the success of the comparison, a string indicating the name of the mismatched property, and two objects representing the expected and actual values of the mismatched property</returns>
-        private (bool Success, string PropertyName, object ExpectedValue, object ActualValue) DeepCompare(object expected, object actual, string parentPropertyName)
+        private List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> DeepCompare(object expected, object actual, string parentPropertyName)
         {
+            var differences = new List<(bool, string, object, object)>();
             // If both objects are null, they are equal, so return true and empty values
             if (expected == null && actual == null)
             {
-                return (true, string.Empty, null, null);
+                return differences;
             }
 
             // If one object is null and the other is not, they are not equal, so return false and the values
             if (expected == null || actual == null)
             {
-                return (false, $"{parentPropertyName}", expected, actual);
+                differences.Add((false, $"{parentPropertyName}", expected, actual));
+                return differences;
             }
 
             // Get the types of the objects
@@ -56,7 +58,8 @@ namespace NUnit.Extension.DeepCompare
             // If the types are different, they are not equal, so return false and the type names
             if (expectedType != actualType)
             {
-                return (false, $"Different Type: {parentPropertyName}", $"{expectedType.Name}", $"{actualType.Name}");
+                differences.Add((false, $"Different Type: {parentPropertyName}", $"{expectedType.Name}", $"{actualType.Name}"));
+                return differences;
             }
 
             // Get the properties of both objects using reflection
@@ -69,7 +72,7 @@ namespace NUnit.Extension.DeepCompare
                 if (!expected.Equals(actual))
                 {
                     // If the objects are not equal, return false and the values
-                    return (false, $"{parentPropertyName}", expected, actual);
+                    differences.Add((false, $"{parentPropertyName}", expected, actual));
                 }
             }
             // If the type implements the ICollection interface, compare the objects as collections
@@ -82,10 +85,11 @@ namespace NUnit.Extension.DeepCompare
                     var nestedResult = CompareLists(expectedList, actualList, $"{parentPropertyName}{expectedProperties}.");
 
                     // If the comparison failed, return the result
-                    if (!nestedResult.Success)
+                    if (nestedResult.Any(x => !x.Success))
                     {
-                        return nestedResult;
+                        differences.AddRange(nestedResult);
                     }
+                    return differences;
                 }
             }
             // If the type is a reference type, compare the objects recursively by their properties
@@ -116,7 +120,8 @@ namespace NUnit.Extension.DeepCompare
                     // If one value is null and the other is not, they are not equal, so return false and the details of the mismatched property and values
                     else if (expectedValue == null || actualValue == null)
                     {
-                        return (false, $"{parentPropertyName}{expectedProperty.Name}", expectedValue, actualValue);
+                        differences.Add((false, $"{parentPropertyName}{expectedProperty.Name}", expectedValue, actualValue));
+                        continue;
                     }
 
                     // If both values are collections, compare them using the CompareLists method
@@ -126,9 +131,9 @@ namespace NUnit.Extension.DeepCompare
                         var nestedResult = CompareLists(expectedList, actualList, $"{parentPropertyName}{expectedProperty.Name}.");
 
                         // If the comparison failed, return the result
-                        if (!nestedResult.Success)
+                        if (nestedResult.Any(x => !x.Success))
                         {
-                            return nestedResult;
+                            differences.AddRange(nestedResult);
                         }
                     }
                     // If both values are value types or strings, compare them using the Equals method
@@ -136,7 +141,7 @@ namespace NUnit.Extension.DeepCompare
                     {
                         if (!Equals(expectedValue, actualValue))
                         {
-                            return (false, $"{parentPropertyName}{expectedProperty.Name}", expectedValue, actualValue);
+                            differences.Add((false, $"{parentPropertyName}{expectedProperty.Name}", expectedValue, actualValue));
                         }
                     }
                     // If the values are not equal, return false and the details of the mismatched property and values
@@ -145,16 +150,16 @@ namespace NUnit.Extension.DeepCompare
                         var nestedResult = DeepCompare(expectedValue, actualValue, $"{parentPropertyName}{expectedProperty.Name}.");
 
                         // If the comparison failed, return the result
-                        if (!nestedResult.Success)
+                        if (nestedResult.Any(x => !x.Success))
                         {
-                            return nestedResult;
+                            differences.AddRange(nestedResult);
                         }
                     }
                 }
             }
 
             // If no mismatch was found, return true and empty value
-            return (true, string.Empty, null, null);
+            return differences;
         }
 
         /// <summary>
@@ -164,12 +169,15 @@ namespace NUnit.Extension.DeepCompare
         /// <param name="actualCollection">The actual collection to compare with</param>
         /// <param name="parentPropertyName">The name of the parent property that contains the collections</param>
         /// <returns>A tuple of four values: a boolean indicating the success of the comparison, a string indicating the name of the mismatched element, and two objects representing the expected and actual values of the mismatched element</returns>
-        private (bool Success, string PropertyName, object ExpectedValue, object ActualValue) CompareLists(ICollection expectedCollection, ICollection actualCollection, string parentPropertyName)
+        private List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> CompareLists(ICollection expectedCollection, ICollection actualCollection, string parentPropertyName)
         {
+            var differences = new List<(bool, string, object, object)>();
+
             // If the collections have different counts, they are not equal, so return false and the counts
             if (expectedCollection.Count != actualCollection.Count)
             {
-                return (false, $"{parentPropertyName}Count", $"Count {expectedCollection.Count}", $"Count {actualCollection.Count}");
+                differences.Add((false, $"{parentPropertyName}Count", $"Count {expectedCollection.Count}", $"Count {actualCollection.Count}"));
+                return differences;
             }
 
             // Get the enumerators of the collections
@@ -182,25 +190,25 @@ namespace NUnit.Extension.DeepCompare
             // Loop through the collections until one of them reaches the end
             while (expectedEnumerator.MoveNext() && actualEnumerator.MoveNext())
             {
-                // Get the current elements of the collections
                 var expectedElement = expectedEnumerator.Current;
                 var actualElement = actualEnumerator.Current;
-
-                // Compare the elements using the DeepCompare method and get the result
                 var nestedResult = DeepCompare(expectedElement, actualElement, $"{parentPropertyName}[{index}].");
 
-                // If the comparison failed, return the result
-                if (!nestedResult.Success)
+                if (nestedResult.Any(x => !x.Success))
                 {
-                    return nestedResult;
+                    differences.AddRange(nestedResult);
                 }
 
-                // Increment the index
                 index++;
             }
 
+            if (differences.Count == 0)
+            {
+                differences.Add((true, string.Empty, null, null));
+            }
+
             // If no mismatch was found, return true and empty value
-            return (true, string.Empty, null, null);
+            return differences;
         }
     }
 }

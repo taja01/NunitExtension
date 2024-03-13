@@ -1,8 +1,8 @@
 ﻿namespace NUnit.Extension.DeepCompare
 {
-    public class Is : NUnit.Framework.Is
+    public class Matches : Framework.Is
     {
-        public static DeeplyEqualConstraint DeeplyEqualTo(object expected)
+        public static DeeplyEqualConstraint DeeplyWith(object expected)
         {
             return new DeeplyEqualConstraint(expected);
         }
