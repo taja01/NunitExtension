@@ -11,11 +11,13 @@ namespace DeepCompare.NUnitExtension
     /// <param name="constraint">The constraint that was applied.</param>
     /// <param name="actualValue">The actual value to which the constraint was applied.</param>
     /// <param name="comparisonResult">The result of the deep equality comparison.</param>
-    public class DeeplyEqualConstraintResult(IConstraint constraint, object actualValue, List<(bool success, string propertyName, object expectedValue, object actualValue)> comparisonResult) : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
+    public class DeeplyEqualConstraintResult(IConstraint constraint, object? actualValue, List<(bool success, string propertyName, object? expectedValue, object? actualValue)> comparisonResult) : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
     {
         public int ErrorCount => _comparisonResult.Count(x => !x.Success);
 
+#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
         private readonly List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> _comparisonResult = comparisonResult;
+#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
 
         /// <summary>
         /// Writes the failure message for this result to the specified writer.
@@ -50,7 +52,7 @@ namespace DeepCompare.NUnitExtension
             {
                 // Use the ternary operator to choose between two messages
                 string message = string.IsNullOrEmpty(result.PropertyName)
-                    ? $"Mismatch: Expected '{result.ExpectedValue}', but was '{result.ActualValue}'."
+                    ? $"Mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'."
                     : $"Property '{result.PropertyName}' mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'.";
 
                 // Write the message to the writer

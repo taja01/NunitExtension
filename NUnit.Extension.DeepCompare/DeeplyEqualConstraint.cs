@@ -30,13 +30,13 @@ namespace DeepCompare.NUnitExtension
         /// <param name="actual">The actual object to compare with</param>
         /// <param name="parentPropertyName">The name of the parent property that contains the objects</param>
         /// <returns>A tuple of four values: a boolean indicating the success of the comparison, a string indicating the name of the mismatched property, and two objects representing the expected and actual values of the mismatched property</returns>
-        private List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> DeepCompare(object expected, object actual, string parentPropertyName)
+        private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> DeepCompare(object? expected, object? actual, string parentPropertyName)
         {
-            var differences = new List<(bool, string, object, object)>();
+            var differences = new List<(bool, string, object?, object?)>();
             // If both objects are null, they are equal, so return true and empty values
             if (expected == null && actual == null)
             {
-                return differences;
+                return [];
             }
 
             // If one object is null and the other is not, they are not equal, so return false and the values
@@ -104,8 +104,10 @@ namespace DeepCompare.NUnitExtension
                     //}
 
                     // Get the values of the expected and actual properties
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                     var expectedValue = expectedProperty.ReflectedType.Name.Equals(nameof(String)) ? expected : expectedProperty.GetValue(expected);
                     var actualValue = actualProperty.ReflectedType.Name.Equals(nameof(String)) ? actual : actualProperty.GetValue(actual);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
                     // If both values are null, they are equal, so continue to the next property
                     if (expectedValue == null && actualValue == null)
@@ -164,9 +166,9 @@ namespace DeepCompare.NUnitExtension
         /// <param name="actualCollection">The actual collection to compare with</param>
         /// <param name="parentPropertyName">The name of the parent property that contains the collections</param>
         /// <returns>A tuple of four values: a boolean indicating the success of the comparison, a string indicating the name of the mismatched element, and two objects representing the expected and actual values of the mismatched element</returns>
-        private List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> CompareLists(ICollection expectedCollection, ICollection actualCollection, string parentPropertyName)
+        private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> CompareLists(ICollection expectedCollection, ICollection actualCollection, string parentPropertyName)
         {
-            var differences = new List<(bool, string, object, object)>();
+            var differences = new List<(bool, string, object?, object?)>();
 
             // If the collections have different counts, they are not equal, so return false and the counts
             if (expectedCollection.Count != actualCollection.Count)
