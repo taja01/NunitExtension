@@ -38,8 +38,8 @@ namespace DeepCompare.NUnitExtension.Tests
         [Test]
         public void Test3()
         {
-            var actual = new ResponseBody { IsSuccess = true, Strings = new List<string> { "22", "44" } };
-            var expected = new ResponseBody { IsSuccess = true, Strings = new List<string> { "22", "34" } };
+            var actual = new ResponseBody { IsSuccess = true, Strings = ["22", "44"] };
+            var expected = new ResponseBody { IsSuccess = true, Strings = ["22", "34"] };
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
 
@@ -51,8 +51,8 @@ namespace DeepCompare.NUnitExtension.Tests
         [Test]
         public void Test4()
         {
-            var actual = new ResponseBody { IsSuccess = true, Numbers = new List<int> { 1, 2, 3 } };
-            var expected = new ResponseBody { IsSuccess = true, Numbers = new List<int> { 3, 2, 1 } };
+            var actual = new ResponseBody { IsSuccess = true, Numbers = [1, 2, 3] };
+            var expected = new ResponseBody { IsSuccess = true, Numbers = [3, 2, 1] };
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
 
@@ -68,14 +68,14 @@ namespace DeepCompare.NUnitExtension.Tests
             {
                 StatusCode = 200,
                 IsSuccess = true,
-                Numbers = new List<int> { 1, 2, 3 },
+                Numbers = [1, 2, 3],
                 Method = Method.GET
             };
             var expected = new ResponseBody
             {
                 StatusCode = 200,
                 IsSuccess = true,
-                Numbers = new List<int> { 1, 2, 3 },
+                Numbers = [1, 2, 3],
             };
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
@@ -91,7 +91,7 @@ namespace DeepCompare.NUnitExtension.Tests
             {
                 StatusCode = 200,
                 IsSuccess = true,
-                Numbers = new List<int> { 1, 2, 3 },
+                Numbers = [1, 2, 3],
                 Method = Method.GET,
                 InnerMessage = new InnerMessage { Message = "Done" }
             };
@@ -99,7 +99,7 @@ namespace DeepCompare.NUnitExtension.Tests
             {
                 StatusCode = 200,
                 IsSuccess = true,
-                Numbers = new List<int> { 1, 2, 3 },
+                Numbers = [1, 2, 3],
                 Method = Method.GET,
                 InnerMessage = new InnerMessage { Message = "Waiting" }
             };
