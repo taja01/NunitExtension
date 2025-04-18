@@ -6,19 +6,14 @@ namespace DeepCompare.NUnitExtension
     /// <summary>
     /// A custom constraint class that checks if two objects are deeply equal
     /// </summary>
-    public class DeeplyEqualConstraint : Constraint
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="DeeplyEqualConstraint"/> class
+    /// </remarks>
+    /// <param name="expected">The expected object to compare with</param>
+    public class DeeplyEqualConstraint(object expected) : Constraint
     {
         // Declare a private field to store the expected object
-        private readonly object _expected;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DeeplyEqualConstraint"/> class
-        /// </summary>
-        /// <param name="expected">The expected object to compare with</param>
-        public DeeplyEqualConstraint(object expected)
-        {
-            _expected = expected;
-        }
+        private readonly object _expected = expected;
 
         public override string Description => "Deeply equal objects";
 

@@ -5,24 +5,17 @@ namespace DeepCompare.NUnitExtension
     /// <summary>
     /// Represents the result of applying a DeeplyEqualConstraint to an actual value.
     /// </summary>
-    public class DeeplyEqualConstraintResult : ConstraintResult
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="DeeplyEqualConstraintResult"/> class.
+    /// </remarks>
+    /// <param name="constraint">The constraint that was applied.</param>
+    /// <param name="actualValue">The actual value to which the constraint was applied.</param>
+    /// <param name="comparisonResult">The result of the deep equality comparison.</param>
+    public class DeeplyEqualConstraintResult(IConstraint constraint, object actualValue, List<(bool success, string propertyName, object expectedValue, object actualValue)> comparisonResult) : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
     {
         public int ErrorCount => _comparisonResult.Count(x => !x.Success);
 
-        private readonly List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> _comparisonResult;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DeeplyEqualConstraintResult"/> class.
-        /// </summary>
-        /// <param name="constraint">The constraint that was applied.</param>
-        /// <param name="actualValue">The actual value to which the constraint was applied.</param>
-        /// <param name="comparisonResult">The result of the deep equality comparison.</param>
-        public DeeplyEqualConstraintResult(IConstraint constraint, object actualValue, List<(bool success, string propertyName, object expectedValue, object actualValue)> comparisonResult)
-            : base(constraint, actualValue, comparisonResult.All(x => x.success))
-
-        {
-            _comparisonResult = comparisonResult;
-        }
+        private readonly List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> _comparisonResult = comparisonResult;
 
         /// <summary>
         /// Writes the failure message for this result to the specified writer.
@@ -31,7 +24,7 @@ namespace DeepCompare.NUnitExtension
         public override void WriteMessageTo(MessageWriter writer)
         {
             // Define a helper method to convert any object to a string representation
-            object StringHelper(object expectedValue)
+            static object StringHelper(object expectedValue)
             {
                 // Use a switch expression to handle different cases
                 return expectedValue switch
@@ -51,7 +44,7 @@ namespace DeepCompare.NUnitExtension
                 return;
             }
 
-            writer.WriteLine($"Differences found: {_comparisonResult.Count()}. The details are as follows:");
+            writer.WriteLine($"Differences found: {_comparisonResult.Count}. The details are as follows:");
 
             foreach (var result in _comparisonResult.Where(x => !x.Success))
             {
