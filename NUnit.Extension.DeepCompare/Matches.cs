@@ -1,4 +1,6 @@
-﻿namespace DeepCompare.NUnitExtension
+﻿using NUnit.Framework.Constraints;
+
+namespace DeepCompare.NUnitExtension
 {
     public class Matches : NUnit.Framework.Is
     {
@@ -40,6 +42,36 @@
         {
             if (!string.IsNullOrEmpty(propertyPath))
                 _options.WithDateTimeTolerance(propertyPath, tolerance);
+            return this;
+        }
+
+        /// <summary>
+        /// Applies the deep-equality constraint to the provided actual value.
+        /// </summary>
+        /// <typeparam name="TActual">The compile-time type of the actual value.</typeparam>
+        /// <param name="actual">The actual value to compare against the expected object supplied to the constraint.</param>
+        /// <returns>
+        /// A <see cref="ConstraintResult"/> that contains success/failure and diagnostic details produced
+        /// by the comparison.
+        /// </returns>
+        public override ConstraintResult ApplyTo<TActual>(TActual actual)
+        {
+            // Create a per-assertion visited set of (expected, actual) reference pairs to detect cycles
+            var visited = new HashSet<(object? expected, object? actual)>(PairReferenceComparer.Instance);
+
+            var result = DeepCompare(_expected, actual, string.Empty, visited);
+            return new DeeplyEqualConstraintResult(this, actual, result);
+        }
+
+        /// <summary>
+        /// Configure this constraint via a callback that modifies <see cref="DeepCompareOptions"/>.
+        /// </summary>
+        /// <param name="configure">Callback to configure comparison options (skip rules, tolerances, max diffs).</param>
+        /// <returns>This constraint instance for fluent chaining.</returns>
+        public DeeplyEqualConstraint WithOptions(Action<DeepCompareOptions> configure)
+        {
+            if (configure is null) return this;
+            configure(_options);
             return this;
         }
 

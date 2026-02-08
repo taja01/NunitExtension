@@ -8,13 +8,16 @@ using System.Reflection;
 namespace DeepCompare.NUnitExtension
 {
     /// <summary>
-    /// A custom constraint class that checks if two objects are deeply equal
+    /// Constraint that performs a deep, recursive comparison between an actual value and an expected object.
+    /// Supports collections, dictionaries, nullable element handling, DateTime tolerances and property skipping.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="DeeplyEqualConstraint"/> class
+    /// Construct using <see cref="Matches.DeeplyWith(object, Action{DeepCompareOptions}?)"/>.
+    /// The comparison runs with a per-assertion visited-pair set to protect against cycles.
+    /// Differences are collected as tuples and presented via <see cref="DeeplyEqualConstraintResult"/>.
     /// </remarks>
-    /// <param name="expected">The expected object to compare with</param>
-    /// <param name="options">Options to control comparison behavior</param>
+    /// <param name="expected">The expected object to compare with.</param>
+    /// <param name="options">Optional comparison options. When null, defaults are used.</param>
     public partial class DeeplyEqualConstraint(object expected, DeepCompareOptions? options = null) : Constraint
     {
         private readonly object _expected = expected;
@@ -25,30 +28,16 @@ namespace DeepCompare.NUnitExtension
         private static PropertyInfo[] GetPropertiesCached(Type t) =>
             _propsCache.GetOrAdd(t, _ => t.GetProperties(BindingFlags.Public | BindingFlags.Instance));
 
+        /// <summary>
+        /// Short textual description of the constraint used by NUnit.
+        /// </summary>
         public override string Description => "Deeply equal objects";
 
-        public override ConstraintResult ApplyTo<TActual>(TActual actual)
-        {
-            // Create a per-assertion visited set of (expected, actual) reference pairs to detect cycles
-            var visited = new HashSet<(object? expected, object? actual)>(PairReferenceComparer.Instance);
-
-            var result = DeepCompare(_expected, actual, string.Empty, visited);
-            return new DeeplyEqualConstraintResult(this, actual, result);
-        }
-
-        /// <summary>
-        /// Fluent helper to configure options after creating the constraint.
-        /// Allows: Matches.DeeplyWith(expected).WithOptions(o => o.Skip("Id"));
-        /// Returns the same constraint for chaining and compatibility with NUnit.
-        /// </summary>
-        public DeeplyEqualConstraint WithOptions(Action<DeepCompareOptions> configure)
-        {
-            if (configure is null) return this;
-            configure(_options);
-            return this;
-        }
-
         // --- helpers for early-exit when MaxDifferences reached ---
+        /// <summary>
+        /// Adds a single difference and returns true when the configured max-differences threshold has been reached.
+        /// Internal helper used to implement early exit.
+        /// </summary>
         private bool TryAddDifference(List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> diffs,
             (bool Success, string PropertyName, object? ExpectedValue, object? ActualValue) diff)
         {
@@ -56,6 +45,10 @@ namespace DeepCompare.NUnitExtension
             return diffs.Count >= _options.MaxDifferences;
         }
 
+        /// <summary>
+        /// Adds a sequence of differences and returns true when the configured max-differences threshold has been reached.
+        /// Internal helper used to implement early exit.
+        /// </summary>
         private bool TryAddRange(List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> diffs,
             IEnumerable<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> items)
         {
@@ -68,6 +61,14 @@ namespace DeepCompare.NUnitExtension
             return false;
         }
 
+        /// <summary>
+        /// Core recursive comparison routine.
+        /// </summary>
+        /// <param name="expected">Expected object (may be null).</param>
+        /// <param name="actual">Actual object to compare (may be null).</param>
+        /// <param name="parentPropertyName">Current property path used for diagnostics (dot/bracket notation).</param>
+        /// <param name="visited">Set of (expected,actual) reference pairs to detect and avoid cycles.</param>
+        /// <returns>List of comparison result tuples; empty list means objects considered equal.</returns>
         private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> DeepCompare(
             object? expected,
             object? actual,
@@ -263,6 +264,9 @@ namespace DeepCompare.NUnitExtension
             return differences;
         }
 
+        /// <summary>
+        /// Compare two dictionary-like objects by keys and values. Produces key-aware paths like "[key]" for diagnostics.
+        /// </summary>
         private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> CompareDictionaries(
             object expectedDictObj,
             object actualDictObj,
@@ -373,7 +377,7 @@ namespace DeepCompare.NUnitExtension
             return differences;
         }
 
-        // Helper to enumerate KeyValuePair entries for generic IDictionary<TKey, TValue> or any enumerable of KeyValuePair<,>
+        // Helper to enumerate KeyValuePair entries for generic IDictionary<TKey, TValue> or any enumerable of KeyValuePair, etc.
         private static IEnumerable<(object? key, object? value)> EnumerateKeyValuePairs(object dictLike)
         {
             if (dictLike is null) yield break;
@@ -548,66 +552,66 @@ namespace DeepCompare.NUnitExtension
             DateTimeOffset actualDto;
 
             try
-            {
-                if (expected is DateTime dtExp)
-                    expectedDto = new DateTimeOffset(dtExp);
-                else if (expected is DateTimeOffset dtoExp)
-                    expectedDto = dtoExp;
-                else
                 {
-                    matched = false;
-                    return false;
-                }
-
-                if (actual is DateTime dtAct)
-                    actualDto = new DateTimeOffset(dtAct);
-                else if (actual is DateTimeOffset dtoAct)
-                    actualDto = dtoAct;
-                else
-                {
-                    matched = false;
-                    return false;
-                }
-            }
-            catch
-            {
-                matched = false;
-                return false;
-            }
-
-            // Determine tolerance: per-property override first, then global
-            TimeSpan? tolerance = null;
-            if (_options.DateTimeTolerances.Count > 0)
-            {
-                // exact or suffix match
-                if (_options.DateTimeTolerances.TryGetValue(fullPropertyName, out var tExact))
-                    tolerance = tExact;
-                else
-                {
-                    foreach (var kv in _options.DateTimeTolerances)
+                    if (expected is DateTime dtExp)
+                        expectedDto = new DateTimeOffset(dtExp);
+                    else if (expected is DateTimeOffset dtoExp)
+                        expectedDto = dtoExp;
+                    else
                     {
-                        if (fullPropertyName.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase))
+                        matched = false;
+                        return false;
+                    }
+
+                    if (actual is DateTime dtAct)
+                        actualDto = new DateTimeOffset(dtAct);
+                    else if (actual is DateTimeOffset dtoAct)
+                        actualDto = dtoAct;
+                    else
+                    {
+                        matched = false;
+                        return false;
+                    }
+                }
+                catch
+                {
+                    matched = false;
+                    return false;
+                }
+
+                // Determine tolerance: per-property override first, then global
+                TimeSpan? tolerance = null;
+                if (_options.DateTimeTolerances.Count > 0)
+                {
+                    // exact or suffix match
+                    if (_options.DateTimeTolerances.TryGetValue(fullPropertyName, out var tExact))
+                        tolerance = tExact;
+                    else
+                    {
+                        foreach (var kv in _options.DateTimeTolerances)
                         {
-                            tolerance = kv.Value;
-                            break;
+                            if (fullPropertyName.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase))
+                            {
+                                tolerance = kv.Value;
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            if (tolerance == null)
-                tolerance = _options.GlobalDateTimeTolerance;
+                if (tolerance == null)
+                    tolerance = _options.GlobalDateTimeTolerance;
 
-            if (tolerance == null)
-            {
-                matched = expectedDto.Equals(actualDto);
+                if (tolerance == null)
+                {
+                    matched = expectedDto.Equals(actualDto);
+                    return matched;
+                }
+
+                var diff = (expectedDto - actualDto).Duration();
+                matched = diff <= tolerance.Value;
                 return matched;
             }
-
-            var diff = (expectedDto - actualDto).Duration();
-            matched = diff <= tolerance.Value;
-            return matched;
-        }
 
         private static string JoinPath(string parent, string segment)
         {
