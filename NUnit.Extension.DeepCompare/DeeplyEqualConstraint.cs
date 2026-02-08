@@ -200,8 +200,6 @@ namespace DeepCompare.NUnitExtension
             if (expectedCollection is object && actualCollection is object)
             {
                 var collectionPair = (expectedCollection as object, actualCollection as object);
-                //if (visited.Contains(collectionPair))
-                //    return differences;
                 visited.Add(collectionPair);
             }
 
