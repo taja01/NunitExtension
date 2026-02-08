@@ -25,6 +25,18 @@ namespace DeepCompare.NUnitExtension
             return new DeeplyEqualConstraintResult(this, actual, result);
         }
 
+        /// <summary>
+        /// Fluent helper to configure options after creating the constraint.
+        /// Allows: Matches.DeeplyWith(expected).WithOptions(o => o.Skip("Id"));
+        /// Returns the same constraint for chaining and compatibility with NUnit.
+        /// </summary>
+        public DeeplyEqualConstraint WithOptions(Action<DeepCompareOptions> configure)
+        {
+            if (configure is null) return this;
+            configure(_options);
+            return this;
+        }
+
         private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> DeepCompare(object? expected, object? actual, string parentPropertyName)
         {
             var differences = new List<(bool, string, object?, object?)>();
