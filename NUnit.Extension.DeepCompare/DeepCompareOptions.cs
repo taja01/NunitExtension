@@ -1,4 +1,7 @@
-﻿namespace DeepCompare.NUnitExtension
+﻿using System;
+using System.Collections.Generic;
+
+namespace DeepCompare.NUnitExtension
 {
     /// <summary>
     /// Options to control deep comparison behavior.
@@ -22,6 +25,12 @@
         /// Keys may be full property path or suffix (case-insensitive).
         /// </summary>
         public Dictionary<string, TimeSpan> DateTimeTolerances { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Maximum number of differences to collect before stopping early.
+        /// Defaults to 100 (to avoid excessively large diff output).
+        /// </summary>
+        public int MaxDifferences { get; private set; } = 100;
 
         /// <summary>
         /// Helper to add a property to skip.
@@ -49,6 +58,17 @@
         {
             if (!string.IsNullOrEmpty(propertyPath))
                 DateTimeTolerances[propertyPath] = tolerance;
+            return this;
+        }
+
+        /// <summary>
+        /// Helper to configure maximum number of differences to collect.
+        /// When the threshold is reached, comparison stops early.
+        /// </summary>
+        public DeepCompareOptions WithMaxDifferences(int max)
+        {
+            if (max <= 0) throw new ArgumentOutOfRangeException(nameof(max), "Max differences must be positive.");
+            MaxDifferences = max;
             return this;
         }
     }

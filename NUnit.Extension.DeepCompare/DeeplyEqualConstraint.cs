@@ -1,5 +1,8 @@
 ﻿using NUnit.Framework.Constraints;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace DeepCompare.NUnitExtension
@@ -45,6 +48,26 @@ namespace DeepCompare.NUnitExtension
             return this;
         }
 
+        // --- helpers for early-exit when MaxDifferences reached ---
+        private bool TryAddDifference(List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> diffs,
+            (bool Success, string PropertyName, object? ExpectedValue, object? ActualValue) diff)
+        {
+            diffs.Add(diff);
+            return diffs.Count >= _options.MaxDifferences;
+        }
+
+        private bool TryAddRange(List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> diffs,
+            IEnumerable<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> items)
+        {
+            foreach (var item in items)
+            {
+                diffs.Add(item);
+                if (diffs.Count >= _options.MaxDifferences)
+                    return true;
+            }
+            return false;
+        }
+
         private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> DeepCompare(
             object? expected,
             object? actual,
@@ -60,7 +83,8 @@ namespace DeepCompare.NUnitExtension
             // If only one is null -> difference
             if (expected == null || actual == null)
             {
-                differences.Add((false, parentPropertyName, expected, actual));
+                if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
+                    return differences;
                 return differences;
             }
 
@@ -85,7 +109,8 @@ namespace DeepCompare.NUnitExtension
                     }
                     else
                     {
-                        differences.Add((false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"));
+                        if (TryAddDifference(differences, (false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"))
+                            ) return differences;
                         return differences;
                     }
                 }
@@ -96,7 +121,8 @@ namespace DeepCompare.NUnitExtension
                 }
                 else
                 {
-                    differences.Add((false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"));
+                    if (TryAddDifference(differences, (false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"))
+                        ) return differences;
                     return differences;
                 }
             }
@@ -125,16 +151,17 @@ namespace DeepCompare.NUnitExtension
                 {
                     if (!CompareDateTimesWithTolerance(expected, actual, parentPropertyName, out var matched))
                     {
-                        differences.Add((false, parentPropertyName, expected, actual));
+                        if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
+                            return differences;
                     }
                     return differences;
                 }
 
                 if (!Equals(expected, actual))
                 {
-                    differences.Add((false, parentPropertyName, expected, actual));
+                    if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
+                        return differences;
                 }
-
                 return differences;
             }
 
@@ -143,7 +170,10 @@ namespace DeepCompare.NUnitExtension
             {
                 var nested = CompareDictionaries(expected, actual, parentPropertyName, visited);
                 if (nested.Any(x => !x.Success))
-                    differences.AddRange(nested);
+                {
+                    if (TryAddRange(differences, nested))
+                        return differences;
+                }
                 return differences;
             }
 
@@ -154,7 +184,10 @@ namespace DeepCompare.NUnitExtension
                 {
                     var nestedResult = CompareLists(expectedList, actualList, parentPropertyName, visited);
                     if (nestedResult.Any(x => !x.Success))
-                        differences.AddRange(nestedResult);
+                    {
+                        if (TryAddRange(differences, nestedResult))
+                            return differences;
+                    }
                     return differences;
                 }
             }
@@ -179,7 +212,8 @@ namespace DeepCompare.NUnitExtension
                 // one null -> difference
                 if (expectedValue == null || actualValue == null)
                 {
-                    differences.Add((false, fullName, expectedValue, actualValue));
+                    if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
+                        return differences;
                     continue;
                 }
 
@@ -188,7 +222,10 @@ namespace DeepCompare.NUnitExtension
                 {
                     var nested = CompareLists(expectedColl, actualColl, fullName, visited);
                     if (nested.Any(x => !x.Success))
-                        differences.AddRange(nested);
+                    {
+                        if (TryAddRange(differences, nested))
+                            return differences;
+                    }
                     continue;
                 }
 
@@ -200,14 +237,16 @@ namespace DeepCompare.NUnitExtension
                     {
                         if (!CompareDateTimesWithTolerance(expectedValue, actualValue, fullName, out var matchedDT))
                         {
-                            differences.Add((false, fullName, expectedValue, actualValue));
+                            if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
+                                return differences;
                         }
                         continue;
                     }
 
                     if (!Equals(expectedValue, actualValue))
                     {
-                        differences.Add((false, fullName, expectedValue, actualValue));
+                        if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
+                            return differences;
                     }
                     continue;
                 }
@@ -215,7 +254,10 @@ namespace DeepCompare.NUnitExtension
                 // Complex object -> recurse, pass visited set to detect cycles
                 var nestedResult = DeepCompare(expectedValue, actualValue, fullName, visited);
                 if (nestedResult.Any(x => !x.Success))
-                    differences.AddRange(nestedResult);
+                {
+                    if (TryAddRange(differences, nestedResult))
+                        return differences;
+                }
             }
 
             return differences;
@@ -239,7 +281,8 @@ namespace DeepCompare.NUnitExtension
             {
                 if (expectedNonGen.Count != actualNonGen.Count)
                 {
-                    differences.Add((false, JoinPath(parentPropertyName, "Count"), $"Count {expectedNonGen.Count}", $"Count {actualNonGen.Count}"));
+                    if (TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedNonGen.Count}", $"Count {actualNonGen.Count}")))
+                        return differences;
                     // continue to find key diffs
                 }
 
@@ -254,13 +297,17 @@ namespace DeepCompare.NUnitExtension
                     var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(key)}]");
                     if (!actualLookup.TryGetValue(key, out var actualVal))
                     {
-                        differences.Add((false, keyPath, expectedNonGen[key], null));
+                        if (TryAddDifference(differences, (false, keyPath, expectedNonGen[key], null)))
+                            return differences;
                         continue;
                     }
 
                     var nested = DeepCompare(expectedNonGen[key], actualVal, keyPath, visited);
                     if (nested.Any(x => !x.Success))
-                        differences.AddRange(nested);
+                    {
+                        if (TryAddRange(differences, nested))
+                            return differences;
+                    }
                 }
 
                 // Extra keys in actual
@@ -269,7 +316,8 @@ namespace DeepCompare.NUnitExtension
                     if (!expectedNonGen.Contains(key))
                     {
                         var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(key)}]");
-                        differences.Add((false, keyPath, null, actualNonGen[key]));
+                        if (TryAddDifference(differences, (false, keyPath, null, actualNonGen[key])))
+                            return differences;
                     }
                 }
 
@@ -282,7 +330,8 @@ namespace DeepCompare.NUnitExtension
 
             if (expectedEntries.Count != actualEntries.Count)
             {
-                differences.Add((false, JoinPath(parentPropertyName, "Count"), $"Count {expectedEntries.Count}", $"Count {actualEntries.Count}"));
+                if (TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedEntries.Count}", $"Count {actualEntries.Count}")))
+                    return differences;
                 // continue to find key diffs
             }
 
@@ -297,13 +346,17 @@ namespace DeepCompare.NUnitExtension
                 var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(eKey)}]");
                 if (!actualLookupGeneric.TryGetValue(eKey, out var aValue))
                 {
-                    differences.Add((false, keyPath, eValue, null));
+                    if (TryAddDifference(differences, (false, keyPath, eValue, null)))
+                        return differences;
                     continue;
                 }
 
                 var nested = DeepCompare(eValue, aValue, keyPath, visited);
                 if (nested.Any(x => !x.Success))
-                    differences.AddRange(nested);
+                {
+                    if (TryAddRange(differences, nested))
+                        return differences;
+                }
             }
 
             // Find extra keys in actual
@@ -312,7 +365,8 @@ namespace DeepCompare.NUnitExtension
                 if (!expectedEntries.Any(e => KeysEqual(e.key, aKey)))
                 {
                     var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(aKey)}]");
-                    differences.Add((false, keyPath, null, aValue));
+                    if (TryAddDifference(differences, (false, keyPath, null, aValue)))
+                        return differences;
                 }
             }
 
@@ -381,7 +435,8 @@ namespace DeepCompare.NUnitExtension
 
             if (expectedCollection.Count != actualCollection.Count)
             {
-                differences.Add((false, JoinPath(parentPropertyName, "Count"), $"Count {expectedCollection.Count}", $"Count {actualCollection.Count}"));
+                if (TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedCollection.Count}", $"Count {actualCollection.Count}")))
+                    return differences;
                 return differences;
             }
 
@@ -404,13 +459,17 @@ namespace DeepCompare.NUnitExtension
 
                     if (expectedElement == null || actualElement == null)
                     {
-                        differences.Add((false, elementPath, expectedElement, actualElement));
+                        if (TryAddDifference(differences, (false, elementPath, expectedElement, actualElement)))
+                            return differences;
                         continue;
                     }
 
                     var nestedResult = DeepCompare(expectedElement, actualElement, elementPath, visited);
                     if (nestedResult.Any(x => !x.Success))
-                        differences.AddRange(nestedResult);
+                    {
+                        if (TryAddRange(differences, nestedResult))
+                            return differences;
+                    }
                 }
 
                 return differences;
@@ -437,7 +496,8 @@ namespace DeepCompare.NUnitExtension
 
                 if (expectedElement == null || actualElement == null)
                 {
-                    differences.Add((false, elementPath, expectedElement, actualElement));
+                    if (TryAddDifference(differences, (false, elementPath, expectedElement, actualElement)))
+                        return differences;
                     index++;
                     continue;
                 }
@@ -446,7 +506,8 @@ namespace DeepCompare.NUnitExtension
 
                 if (nestedResult.Any(x => !x.Success))
                 {
-                    differences.AddRange(nestedResult);
+                    if (TryAddRange(differences, nestedResult))
+                        return differences;
                 }
 
                 index++;
