@@ -1,8 +1,5 @@
 ﻿using NUnit.Framework.Constraints;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace DeepCompare.NUnitExtension
@@ -32,6 +29,11 @@ namespace DeepCompare.NUnitExtension
         /// Short textual description of the constraint used by NUnit.
         /// </summary>
         public override string Description => "Deeply equal objects";
+
+        /// <summary>
+        /// Get max differences from options for use in result reporting.
+        /// </summary>
+        public int MaxDifferences => _options.MaxDifferences;
 
         // --- helpers for early-exit when MaxDifferences reached ---
         /// <summary>
@@ -552,66 +554,66 @@ namespace DeepCompare.NUnitExtension
             DateTimeOffset actualDto;
 
             try
-                {
-                    if (expected is DateTime dtExp)
-                        expectedDto = new DateTimeOffset(dtExp);
-                    else if (expected is DateTimeOffset dtoExp)
-                        expectedDto = dtoExp;
-                    else
-                    {
-                        matched = false;
-                        return false;
-                    }
-
-                    if (actual is DateTime dtAct)
-                        actualDto = new DateTimeOffset(dtAct);
-                    else if (actual is DateTimeOffset dtoAct)
-                        actualDto = dtoAct;
-                    else
-                    {
-                        matched = false;
-                        return false;
-                    }
-                }
-                catch
+            {
+                if (expected is DateTime dtExp)
+                    expectedDto = new DateTimeOffset(dtExp);
+                else if (expected is DateTimeOffset dtoExp)
+                    expectedDto = dtoExp;
+                else
                 {
                     matched = false;
                     return false;
                 }
 
-                // Determine tolerance: per-property override first, then global
-                TimeSpan? tolerance = null;
-                if (_options.DateTimeTolerances.Count > 0)
+                if (actual is DateTime dtAct)
+                    actualDto = new DateTimeOffset(dtAct);
+                else if (actual is DateTimeOffset dtoAct)
+                    actualDto = dtoAct;
+                else
                 {
-                    // exact or suffix match
-                    if (_options.DateTimeTolerances.TryGetValue(fullPropertyName, out var tExact))
-                        tolerance = tExact;
-                    else
+                    matched = false;
+                    return false;
+                }
+            }
+            catch
+            {
+                matched = false;
+                return false;
+            }
+
+            // Determine tolerance: per-property override first, then global
+            TimeSpan? tolerance = null;
+            if (_options.DateTimeTolerances.Count > 0)
+            {
+                // exact or suffix match
+                if (_options.DateTimeTolerances.TryGetValue(fullPropertyName, out var tExact))
+                    tolerance = tExact;
+                else
+                {
+                    foreach (var kv in _options.DateTimeTolerances)
                     {
-                        foreach (var kv in _options.DateTimeTolerances)
+                        if (fullPropertyName.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase))
                         {
-                            if (fullPropertyName.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase))
-                            {
-                                tolerance = kv.Value;
-                                break;
-                            }
+                            tolerance = kv.Value;
+                            break;
                         }
                     }
                 }
+            }
 
-                if (tolerance == null)
-                    tolerance = _options.GlobalDateTimeTolerance;
+            if (tolerance == null)
+                tolerance = _options.GlobalDateTimeTolerance;
 
-                if (tolerance == null)
-                {
-                    matched = expectedDto.Equals(actualDto);
-                    return matched;
-                }
-
-                var diff = (expectedDto - actualDto).Duration();
-                matched = diff <= tolerance.Value;
+            if (tolerance == null)
+            {
+                matched = expectedDto.Equals(actualDto);
                 return matched;
             }
+
+            var diff = (expectedDto - actualDto).Duration();
+            matched = diff <= tolerance.Value;
+            return matched;
+        }
 
         private static string JoinPath(string parent, string segment)
         {

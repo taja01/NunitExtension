@@ -17,6 +17,8 @@ namespace DeepCompare.NUnitExtension
         /// </summary>
         public int ErrorCount => _comparisonResult.Count(x => !x.Success);
 
+        public IConstraint Constraint => constraint;
+
 #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
         private readonly List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> _comparisonResult = comparisonResult;
 #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
@@ -37,6 +39,12 @@ namespace DeepCompare.NUnitExtension
 
             var errors = _comparisonResult.Where(x => !x.Success).ToList();
             if (!errors.Any()) return;
+
+            var limit = ((DeeplyEqualConstraint)Constraint).MaxDifferences;
+            if (limit == errors.Count)
+            {
+                writer.WriteLine($"Maximum limit of {limit} reached.");
+            }
 
             writer.WriteLine($"Differences found: {errors.Count}. The details are as follows:");
 

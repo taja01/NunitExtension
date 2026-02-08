@@ -13,6 +13,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = expected.Select(i => i + 1).ToList(); // all values differ
 
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
+            Assert.That(ex.Message, Does.Contain("Maximum limit of 100 reached."));
             Assert.That(ex.Message, Does.Contain("Differences found: 100. The details are as follows:"));
         }
 
