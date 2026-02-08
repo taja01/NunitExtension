@@ -12,7 +12,7 @@ namespace DeepCompare.NUnitExtension
     public class DeeplyEqualConstraintResult(IConstraint constraint, object? actualValue, List<(bool success, string propertyName, object? expectedValue, object? actualValue)> comparisonResult)
         : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
     {
-        private readonly IConstraint Constraint = constraint;
+        private readonly IConstraint _constraint = constraint;
 
         /// <summary>
         /// Number of differences (entries where Success == false).
@@ -45,7 +45,7 @@ namespace DeepCompare.NUnitExtension
                 return;
             }
 
-            var limit = ((DeeplyEqualConstraint)Constraint).MaxDifferences;
+            var limit = ((DeeplyEqualConstraint)_constraint).MaxDifferences;
             if (limit == errors.Count)
             {
                 writer.WriteLine($"Maximum limit of {limit} reached.");
