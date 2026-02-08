@@ -2,6 +2,10 @@
 using System.Collections;
 using System.Reflection;
 
+#pragma warning disable CS8601
+#pragma warning disable CS8602
+#pragma warning disable CS8604
+
 namespace DeepCompare.NUnitExtension
 {
     /// <summary>
@@ -546,8 +550,8 @@ namespace DeepCompare.NUnitExtension
             }
 
             // Fallback: enumerator with index
-            var expectedEnumerator = expectedCollection?.GetEnumerator();
-            var actualEnumerator = actualCollection?.GetEnumerator();
+            var expectedEnumerator = expectedCollection.GetEnumerator();
+            var actualEnumerator = actualCollection.GetEnumerator();
             var index = 0;
 
             while (expectedEnumerator.MoveNext() && actualEnumerator.MoveNext())
@@ -777,3 +781,6 @@ namespace DeepCompare.NUnitExtension
         }
     }
 }
+#pragma warning restore CS8601
+#pragma warning restore CS8602
+#pragma warning restore CS8604

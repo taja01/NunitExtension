@@ -11,7 +11,9 @@ namespace DeepCompare.NUnitExtension.Tests
             List<int>? expected = null;
             var actual = new List<int>();
 
+#pragma warning disable CS8604 // Possible null reference argument.
             var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
+#pragma warning restore CS8604 // Possible null reference argument.
             Assert.That(ex.Message, Does.Contain("null"));
         }
 
