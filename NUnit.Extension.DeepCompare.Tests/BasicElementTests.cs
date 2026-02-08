@@ -22,9 +22,9 @@ namespace DeepCompare.NUnitExtension.Tests
         {
             var ex = Assert.Throws<AssertionException>(() => Assert.That(StringOne, Matches.DeeplyWith(StringTwo)));
 
-            Assert.That(ex.Message, Does.Contain("Differences found: 2. The details are as follows:"));
-            Assert.That(ex.Message, Does.Contain("Property 'Chars' mismatch: Expected '321', but was '123'"));
-            Assert.That(ex.Message, Does.Contain("Property 'Length' mismatch: Expected '321', but was '123'"));
+            Assert.That(ex.Message, Does.Contain("Assert.That(StringOne, Matches.DeeplyWith(StringTwo))"));
+            Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
+            Assert.That(ex.Message, Does.Contain("Mismatch: Expected '321', but was '123'."));
         }
 
         [Test]
