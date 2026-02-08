@@ -89,6 +89,11 @@ namespace DeepCompare.NUnitExtension
                         return differences;
                     }
                 }
+                // If both are dictionary-like, allow dictionary comparison despite different concrete types
+                else if (IsDictionaryType(expectedType) && IsDictionaryType(actualType))
+                {
+                    // allow falling through to dictionary comparison below
+                }
                 else
                 {
                     differences.Add((false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"));
@@ -130,6 +135,15 @@ namespace DeepCompare.NUnitExtension
                     differences.Add((false, parentPropertyName, expected, actual));
                 }
 
+                return differences;
+            }
+
+            // Dictionary handling (generic IDictionary<,> or non-generic IDictionary)
+            if (IsDictionaryType(expectedType) && IsDictionaryType(actualType))
+            {
+                var nested = CompareDictionaries(expected, actual, parentPropertyName, visited);
+                if (nested.Any(x => !x.Success))
+                    differences.AddRange(nested);
                 return differences;
             }
 
@@ -205,6 +219,141 @@ namespace DeepCompare.NUnitExtension
             }
 
             return differences;
+        }
+
+        private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> CompareDictionaries(
+            object expectedDictObj,
+            object actualDictObj,
+            string parentPropertyName,
+            HashSet<(object? expected, object? actual)> visited)
+        {
+            var differences = new List<(bool, string, object?, object?)>();
+
+            // Track pair to prevent infinite recursion but do not short-circuit
+            var dictPair = (expectedDictObj as object, actualDictObj as object);
+            if (!visited.Contains(dictPair))
+                visited.Add(dictPair);
+
+            // Try non-generic IDictionary first
+            if (expectedDictObj is IDictionary expectedNonGen && actualDictObj is IDictionary actualNonGen)
+            {
+                // Count difference
+                if (expectedNonGen.Count != actualNonGen.Count)
+                {
+                    differences.Add((false, JoinPath(parentPropertyName, "Count"), $"Count {expectedNonGen.Count}", $"Count {actualNonGen.Count}"));
+                    // continue to report key differences as well
+                }
+
+                // Check keys from expected
+                foreach (var key in expectedNonGen.Keys)
+                {
+                    var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(key)}]");
+                    if (!actualNonGen.Contains(key))
+                    {
+                        differences.Add((false, keyPath, expectedNonGen[key], null));
+                        continue;
+                    }
+
+                    var actualValue = actualNonGen[key];
+                    var nested = DeepCompare(expectedNonGen[key], actualValue, keyPath, visited);
+                    if (nested.Any(x => !x.Success))
+                        differences.AddRange(nested);
+                }
+
+                // Extra keys in actual
+                foreach (var key in actualNonGen.Keys)
+                {
+                    if (!expectedNonGen.Contains(key))
+                    {
+                        var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(key)}]");
+                        differences.Add((false, keyPath, null, actualNonGen[key]));
+                    }
+                }
+
+                return differences;
+            }
+
+            // Fallback: generic IDictionary via enumeration of KeyValuePair<,> or any enumerable of KeyValuePair<,>
+            var expectedEntries = EnumerateKeyValuePairs(expectedDictObj).ToList();
+            var actualEntries = EnumerateKeyValuePairs(actualDictObj).ToList();
+
+            if (expectedEntries.Count != actualEntries.Count)
+            {
+                differences.Add((false, JoinPath(parentPropertyName, "Count"), $"Count {expectedEntries.Count}", $"Count {actualEntries.Count}"));
+                // continue; still check keys
+            }
+
+            // For each expected key find matching actual by equality
+            var matchedActualIndices = new HashSet<int>();
+            for (int i = 0; i < expectedEntries.Count; i++)
+            {
+                var (eKey, eValue) = expectedEntries[i];
+                var matchIndex = actualEntries.FindIndex(a => KeysEqual(a.key, eKey));
+                var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(eKey)}]");
+                if (matchIndex == -1)
+                {
+                    differences.Add((false, keyPath, eValue, null));
+                    continue;
+                }
+
+                matchedActualIndices.Add(matchIndex);
+                var aValue = actualEntries[matchIndex].value;
+                var nested = DeepCompare(eValue, aValue, keyPath, visited);
+                if (nested.Any(x => !x.Success))
+                    differences.AddRange(nested);
+            }
+
+            // Any actual keys not matched are extras
+            for (int i = 0; i < actualEntries.Count; i++)
+            {
+                if (matchedActualIndices.Contains(i)) continue;
+                var (aKey, aValue) = actualEntries[i];
+                var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(aKey)}]");
+                differences.Add((false, keyPath, null, aValue));
+            }
+
+            return differences;
+        }
+
+        // Helper to enumerate KeyValuePair entries for generic IDictionary<TKey, TValue> or any enumerable of KeyValuePair<,>
+        private static IEnumerable<(object? key, object? value)> EnumerateKeyValuePairs(object dictLike)
+        {
+            if (dictLike is null) yield break;
+
+            if (dictLike is IDictionary nonGen)
+            {
+                foreach (var key in nonGen.Keys)
+                    yield return (key, nonGen[key]);
+                yield break;
+            }
+
+            if (dictLike is IEnumerable enumerable)
+            {
+                foreach (var item in enumerable)
+                {
+                    if (item == null) continue;
+                    var t = item.GetType();
+                    var keyProp = t.GetProperty("Key");
+                    var valueProp = t.GetProperty("Value");
+                    if (keyProp != null && valueProp != null)
+                    {
+                        yield return (keyProp.GetValue(item), valueProp.GetValue(item));
+                    }
+                }
+            }
+        }
+
+        private static bool KeysEqual(object? a, object? b)
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            return a.Equals(b);
+        }
+
+        private static string FormatKey(object? key)
+        {
+            if (key == null) return "null";
+            return key is string s ? s : key.ToString() ?? "key";
         }
 
         private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> CompareLists(
@@ -407,6 +556,14 @@ namespace DeepCompare.NUnitExtension
             if (t.IsArray) return true;
             if (t.GetInterface(nameof(ICollection)) != null) return true;
             if (t.IsGenericType && t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))) return true;
+            return false;
+        }
+
+        private static bool IsDictionaryType(Type t)
+        {
+            if (t == typeof(string)) return false;
+            if (t.GetInterface(nameof(IDictionary)) != null) return true;
+            if (t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>))) return true;
             return false;
         }
 
