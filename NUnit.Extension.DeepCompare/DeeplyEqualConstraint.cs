@@ -58,7 +58,9 @@ namespace DeepCompare.NUnitExtension
             {
                 diffs.Add(item);
                 if (diffs.Count >= _options.MaxDifferences)
+                {
                     return true;
+                }
             }
             return false;
         }
@@ -81,14 +83,14 @@ namespace DeepCompare.NUnitExtension
 
             // If both null -> equal
             if (expected == null && actual == null)
+            {
                 return differences; // empty = no diffs
+            }
 
             // If only one is null -> difference
             if (expected == null || actual == null)
             {
-                if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
-                    return differences;
-                return differences;
+                return TryAddDifference(differences, (false, parentPropertyName, expected, actual)) ? (List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)>)differences : (List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)>)differences;
             }
 
             var expectedType = expected.GetType();
@@ -112,9 +114,9 @@ namespace DeepCompare.NUnitExtension
                     }
                     else
                     {
-                        if (TryAddDifference(differences, (false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"))
-                            ) return differences;
-                        return differences;
+                        return TryAddDifference(differences, (false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"))
+                            ? (List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)>)differences
+                            : (List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)>)differences;
                     }
                 }
                 // If both are dictionary-like, allow dictionary comparison despite different concrete types
@@ -124,9 +126,9 @@ namespace DeepCompare.NUnitExtension
                 }
                 else
                 {
-                    if (TryAddDifference(differences, (false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"))
-                        ) return differences;
-                    return differences;
+                    return TryAddDifference(differences, (false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"))
+                        ? (List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)>)differences
+                        : (List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)>)differences;
                 }
             }
 
@@ -155,7 +157,9 @@ namespace DeepCompare.NUnitExtension
                     if (!CompareDateTimesWithTolerance(expected, actual, parentPropertyName, out var matched))
                     {
                         if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
+                        {
                             return differences;
+                        }
                     }
                     return differences;
                 }
@@ -163,7 +167,9 @@ namespace DeepCompare.NUnitExtension
                 if (!Equals(expected, actual))
                 {
                     if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
+                    {
                         return differences;
+                    }
                 }
                 return differences;
             }
@@ -175,7 +181,9 @@ namespace DeepCompare.NUnitExtension
                 if (nested.Any(x => !x.Success))
                 {
                     if (TryAddRange(differences, nested))
+                    {
                         return differences;
+                    }
                 }
                 return differences;
             }
@@ -189,7 +197,9 @@ namespace DeepCompare.NUnitExtension
                     if (nestedResult.Any(x => !x.Success))
                     {
                         if (TryAddRange(differences, nestedResult))
+                        {
                             return differences;
+                        }
                     }
                     return differences;
                 }
@@ -202,7 +212,9 @@ namespace DeepCompare.NUnitExtension
                 var fullName = JoinPath(parentPropertyName, prop.Name);
                 // Skip check: match exact or suffix
                 if (IsSkipped(fullName))
+                {
                     continue;
+                }
 
                 var expectedValue = prop.GetValue(expected);
                 var actualProp = actualType.GetProperty(prop.Name);
@@ -210,13 +222,18 @@ namespace DeepCompare.NUnitExtension
 
                 // both null -> continue
                 if (expectedValue == null && actualValue == null)
+                {
                     continue;
+                }
 
                 // one null -> difference
                 if (expectedValue == null || actualValue == null)
                 {
                     if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
+                    {
                         return differences;
+                    }
+
                     continue;
                 }
 
@@ -227,7 +244,9 @@ namespace DeepCompare.NUnitExtension
                     if (nested.Any(x => !x.Success))
                     {
                         if (TryAddRange(differences, nested))
+                        {
                             return differences;
+                        }
                     }
                     continue;
                 }
@@ -241,7 +260,9 @@ namespace DeepCompare.NUnitExtension
                         if (!CompareDateTimesWithTolerance(expectedValue, actualValue, fullName, out var matchedDT))
                         {
                             if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
+                            {
                                 return differences;
+                            }
                         }
                         continue;
                     }
@@ -249,7 +270,9 @@ namespace DeepCompare.NUnitExtension
                     if (!Equals(expectedValue, actualValue))
                     {
                         if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
+                        {
                             return differences;
+                        }
                     }
                     continue;
                 }
@@ -259,7 +282,9 @@ namespace DeepCompare.NUnitExtension
                 if (nestedResult.Any(x => !x.Success))
                 {
                     if (TryAddRange(differences, nestedResult))
+                    {
                         return differences;
+                    }
                 }
             }
 
@@ -280,7 +305,9 @@ namespace DeepCompare.NUnitExtension
             // Track pair to prevent infinite recursion but do not short-circuit
             var dictPair = (expectedDictObj as object, actualDictObj as object);
             if (!visited.Contains(dictPair))
+            {
                 visited.Add(dictPair);
+            }
 
             // Non-generic IDictionary fast path
             if (expectedDictObj is IDictionary expectedNonGen && actualDictObj is IDictionary actualNonGen)
@@ -288,14 +315,18 @@ namespace DeepCompare.NUnitExtension
                 if (expectedNonGen.Count != actualNonGen.Count)
                 {
                     if (TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedNonGen.Count}", $"Count {actualNonGen.Count}")))
+                    {
                         return differences;
+                    }
                     // continue to find key diffs
                 }
 
                 // Build fast lookup of actual keys -> values (object equality)
                 var actualLookup = new Dictionary<object, object>(actualNonGen.Count, new ObjectKeyComparer());
                 foreach (var key in actualNonGen.Keys)
+                {
                     actualLookup[key] = actualNonGen[key];
+                }
 
                 // Compare expected keys
                 foreach (var key in expectedNonGen.Keys)
@@ -304,7 +335,10 @@ namespace DeepCompare.NUnitExtension
                     if (!actualLookup.TryGetValue(key, out var actualVal))
                     {
                         if (TryAddDifference(differences, (false, keyPath, expectedNonGen[key], null)))
+                        {
                             return differences;
+                        }
+
                         continue;
                     }
 
@@ -312,7 +346,9 @@ namespace DeepCompare.NUnitExtension
                     if (nested.Any(x => !x.Success))
                     {
                         if (TryAddRange(differences, nested))
+                        {
                             return differences;
+                        }
                     }
                 }
 
@@ -323,7 +359,9 @@ namespace DeepCompare.NUnitExtension
                     {
                         var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(key)}]");
                         if (TryAddDifference(differences, (false, keyPath, null, actualNonGen[key])))
+                        {
                             return differences;
+                        }
                     }
                 }
 
@@ -337,14 +375,18 @@ namespace DeepCompare.NUnitExtension
             if (expectedEntries.Count != actualEntries.Count)
             {
                 if (TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedEntries.Count}", $"Count {actualEntries.Count}")))
+                {
                     return differences;
+                }
                 // continue to find key diffs
             }
 
             // Build actual lookup using object equality for keys (O(n))
             var actualLookupGeneric = new Dictionary<object, object>(new ObjectKeyComparer());
             foreach (var (k, v) in actualEntries)
+            {
                 actualLookupGeneric[k] = v;
+            }
 
             // Compare expected entries using lookup
             foreach (var (eKey, eValue) in expectedEntries)
@@ -353,7 +395,10 @@ namespace DeepCompare.NUnitExtension
                 if (!actualLookupGeneric.TryGetValue(eKey, out var aValue))
                 {
                     if (TryAddDifference(differences, (false, keyPath, eValue, null)))
+                    {
                         return differences;
+                    }
+
                     continue;
                 }
 
@@ -361,7 +406,9 @@ namespace DeepCompare.NUnitExtension
                 if (nested.Any(x => !x.Success))
                 {
                     if (TryAddRange(differences, nested))
+                    {
                         return differences;
+                    }
                 }
             }
 
@@ -372,7 +419,9 @@ namespace DeepCompare.NUnitExtension
                 {
                     var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(aKey)}]");
                     if (TryAddDifference(differences, (false, keyPath, null, aValue)))
+                    {
                         return differences;
+                    }
                 }
             }
 
@@ -382,12 +431,18 @@ namespace DeepCompare.NUnitExtension
         // Helper to enumerate KeyValuePair entries for generic IDictionary<TKey, TValue> or any enumerable of KeyValuePair, etc.
         private static IEnumerable<(object? key, object? value)> EnumerateKeyValuePairs(object dictLike)
         {
-            if (dictLike is null) yield break;
+            if (dictLike is null)
+            {
+                yield break;
+            }
 
             if (dictLike is IDictionary nonGen)
             {
                 foreach (var key in nonGen.Keys)
+                {
                     yield return (key, nonGen[key]);
+                }
+
                 yield break;
             }
 
@@ -395,7 +450,11 @@ namespace DeepCompare.NUnitExtension
             {
                 foreach (var item in enumerable)
                 {
-                    if (item == null) continue;
+                    if (item == null)
+                    {
+                        continue;
+                    }
+
                     var t = item.GetType();
                     var keyProp = t.GetProperty("Key");
                     var valueProp = t.GetProperty("Value");
@@ -409,15 +468,17 @@ namespace DeepCompare.NUnitExtension
 
         private static bool KeysEqual(object? a, object? b)
         {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return a.Equals(b);
+            if (a == null && b == null)
+            {
+                return true;
+            }
+
+            return a != null && b != null && a.Equals(b);
         }
 
         private static string FormatKey(object? key)
         {
-            if (key == null) return "null";
-            return key is string s ? s : key.ToString() ?? "key";
+            return key == null ? "null" : key is string s ? s : key.ToString() ?? "key";
         }
 
         private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> CompareLists(
@@ -440,9 +501,9 @@ namespace DeepCompare.NUnitExtension
 
             if (expectedCollection?.Count != actualCollection?.Count)
             {
-                if (TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedCollection?.Count}", $"Count {actualCollection?.Count}")))
-                    return differences;
-                return differences;
+                return TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedCollection?.Count}", $"Count {actualCollection?.Count}"))
+                    ? (List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)>)differences
+                    : (List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)>)differences;
             }
 
             // Prefer IList for stable index access
@@ -465,7 +526,10 @@ namespace DeepCompare.NUnitExtension
                     if (expectedElement == null || actualElement == null)
                     {
                         if (TryAddDifference(differences, (false, elementPath, expectedElement, actualElement)))
+                        {
                             return differences;
+                        }
+
                         continue;
                     }
 
@@ -473,7 +537,9 @@ namespace DeepCompare.NUnitExtension
                     if (nestedResult.Any(x => !x.Success))
                     {
                         if (TryAddRange(differences, nestedResult))
+                        {
                             return differences;
+                        }
                     }
                 }
 
@@ -502,7 +568,10 @@ namespace DeepCompare.NUnitExtension
                 if (expectedElement == null || actualElement == null)
                 {
                     if (TryAddDifference(differences, (false, elementPath, expectedElement, actualElement)))
+                    {
                         return differences;
+                    }
+
                     index++;
                     continue;
                 }
@@ -512,7 +581,9 @@ namespace DeepCompare.NUnitExtension
                 if (nestedResult.Any(x => !x.Success))
                 {
                     if (TryAddRange(differences, nestedResult))
+                    {
                         return differences;
+                    }
                 }
 
                 index++;
@@ -524,17 +595,23 @@ namespace DeepCompare.NUnitExtension
         private bool IsSkipped(string fullPropertyName)
         {
             if (_options.SkippedProperties.Count == 0)
+            {
                 return false;
+            }
 
             // exact or suffix match (case-insensitive already via HashSet)
             if (_options.SkippedProperties.Contains(fullPropertyName))
+            {
                 return true;
+            }
 
             // suffix match: if any skipped entry matches end of fullPropertyName
             foreach (var skip in _options.SkippedProperties)
             {
                 if (fullPropertyName.EndsWith(skip, StringComparison.OrdinalIgnoreCase))
+                {
                     return true;
+                }
             }
 
             return false;
@@ -555,9 +632,13 @@ namespace DeepCompare.NUnitExtension
             try
             {
                 if (expected is DateTime dtExp)
+                {
                     expectedDto = new DateTimeOffset(dtExp);
+                }
                 else if (expected is DateTimeOffset dtoExp)
+                {
                     expectedDto = dtoExp;
+                }
                 else
                 {
                     matched = false;
@@ -565,9 +646,13 @@ namespace DeepCompare.NUnitExtension
                 }
 
                 if (actual is DateTime dtAct)
+                {
                     actualDto = new DateTimeOffset(dtAct);
+                }
                 else if (actual is DateTimeOffset dtoAct)
+                {
                     actualDto = dtoAct;
+                }
                 else
                 {
                     matched = false;
@@ -586,7 +671,9 @@ namespace DeepCompare.NUnitExtension
             {
                 // exact or suffix match
                 if (_options.DateTimeTolerances.TryGetValue(fullPropertyName, out var tExact))
+                {
                     tolerance = tExact;
+                }
                 else
                 {
                     foreach (var kv in _options.DateTimeTolerances)
@@ -601,7 +688,9 @@ namespace DeepCompare.NUnitExtension
             }
 
             if (tolerance == null)
+            {
                 tolerance = _options.GlobalDateTimeTolerance;
+            }
 
             if (tolerance == null)
             {
@@ -616,36 +705,60 @@ namespace DeepCompare.NUnitExtension
 
         private static string JoinPath(string parent, string segment)
         {
-            if (string.IsNullOrEmpty(parent)) return segment;
-            return segment.StartsWith("[", StringComparison.OrdinalIgnoreCase) ? parent + segment : parent + "." + segment;
+            return string.IsNullOrEmpty(parent)
+                ? segment
+                : segment.StartsWith("[", StringComparison.OrdinalIgnoreCase) ? parent + segment : parent + "." + segment;
         }
 
         private static bool IsCollectionType(Type t)
         {
-            if (t == typeof(string)) return false;
-            if (t.IsArray) return true;
-            if (t.GetInterface(nameof(ICollection)) != null) return true;
-            if (t.IsGenericType && t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))) return true;
-            return false;
+            if (t == typeof(string))
+            {
+                return false;
+            }
+
+            if (t.IsArray)
+            {
+                return true;
+            }
+
+            if (t.GetInterface(nameof(ICollection)) != null)
+            {
+                return true;
+            }
+
+            return t.IsGenericType && t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
         }
 
         private static bool IsDictionaryType(Type t)
         {
-            if (t == typeof(string)) return false;
-            if (t.GetInterface(nameof(IDictionary)) != null) return true;
-            if (t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>))) return true;
-            return false;
+            if (t == typeof(string))
+            {
+                return false;
+            }
+
+            if (t.GetInterface(nameof(IDictionary)) != null)
+            {
+                return true;
+            }
+
+            return t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>));
         }
 
         private static Type? GetElementType(Type t)
         {
-            if (t.IsArray) return t.GetElementType();
+            if (t.IsArray)
+            {
+                return t.GetElementType();
+            }
 
             // IList<T> / ICollection<T> / IEnumerable<T>
             var ie = t.GetInterfaces()
                       .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
             if (ie != null)
+            {
                 return ie.GetGenericArguments()[0];
+            }
 
             // fallback for non-generic collections
             return typeof(object);

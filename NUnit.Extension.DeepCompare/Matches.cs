@@ -21,7 +21,10 @@ namespace DeepCompare.NUnitExtension
         public DeeplyEqualConstraint Skip(string propertyPath)
         {
             if (!string.IsNullOrEmpty(propertyPath))
+            {
                 _options.Skip(propertyPath);
+            }
+
             return this;
         }
 
@@ -41,7 +44,10 @@ namespace DeepCompare.NUnitExtension
         public DeeplyEqualConstraint WithDateTimeTolerance(string propertyPath, TimeSpan tolerance)
         {
             if (!string.IsNullOrEmpty(propertyPath))
+            {
                 _options.WithDateTimeTolerance(propertyPath, tolerance);
+            }
+
             return this;
         }
 
@@ -70,7 +76,11 @@ namespace DeepCompare.NUnitExtension
         /// <returns>This constraint instance for fluent chaining.</returns>
         public DeeplyEqualConstraint WithOptions(Action<DeepCompareOptions> configure)
         {
-            if (configure is null) return this;
+            if (configure is null)
+            {
+                return this;
+            }
+
             configure(_options);
             return this;
         }

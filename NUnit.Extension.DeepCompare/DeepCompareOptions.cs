@@ -38,7 +38,10 @@ namespace DeepCompare.NUnitExtension
         public DeepCompareOptions Skip(string propertyPath)
         {
             if (!string.IsNullOrEmpty(propertyPath))
+            {
                 SkippedProperties.Add(propertyPath);
+            }
+
             return this;
         }
 
@@ -57,7 +60,10 @@ namespace DeepCompare.NUnitExtension
         public DeepCompareOptions WithDateTimeTolerance(string propertyPath, TimeSpan tolerance)
         {
             if (!string.IsNullOrEmpty(propertyPath))
+            {
                 DateTimeTolerances[propertyPath] = tolerance;
+            }
+
             return this;
         }
 
@@ -67,7 +73,11 @@ namespace DeepCompare.NUnitExtension
         /// </summary>
         public DeepCompareOptions WithMaxDifferences(int max)
         {
-            if (max <= 0) throw new ArgumentOutOfRangeException(nameof(max), "Max differences must be positive.");
+            if (max <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(max), "Max differences must be positive.");
+            }
+
             MaxDifferences = max;
             return this;
         }
