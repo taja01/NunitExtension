@@ -131,7 +131,7 @@ namespace DeepCompare.NUnitExtension
             }
 
             // For reference types (not value types and not string) detect cycles using the visited pair set.
-            var isReferenceType = !expectedType.IsValueType && !(expected is string);
+            var isReferenceType = !expectedType.IsValueType && expected is not string;
             if (isReferenceType)
             {
                 var pair = (expected, actual);
@@ -206,7 +206,7 @@ namespace DeepCompare.NUnitExtension
 
                 var expectedValue = prop.GetValue(expected);
                 var actualProp = actualType.GetProperty(prop.Name);
-                object? actualValue = actualProp != null ? actualProp.GetValue(actual) : null;
+                object? actualValue = actualProp?.GetValue(actual);
 
                 // both null -> continue
                 if (expectedValue == null && actualValue == null)
@@ -293,7 +293,7 @@ namespace DeepCompare.NUnitExtension
                 }
 
                 // Build fast lookup of actual keys -> values (object equality)
-                var actualLookup = new Dictionary<object?, object?>(actualNonGen.Count, new ObjectKeyComparer());
+                var actualLookup = new Dictionary<object, object>(actualNonGen.Count, new ObjectKeyComparer());
                 foreach (var key in actualNonGen.Keys)
                     actualLookup[key] = actualNonGen[key];
 
@@ -342,7 +342,7 @@ namespace DeepCompare.NUnitExtension
             }
 
             // Build actual lookup using object equality for keys (O(n))
-            var actualLookupGeneric = new Dictionary<object?, object?>(new ObjectKeyComparer());
+            var actualLookupGeneric = new Dictionary<object, object>(new ObjectKeyComparer());
             foreach (var (k, v) in actualEntries)
                 actualLookupGeneric[k] = v;
 
@@ -429,19 +429,18 @@ namespace DeepCompare.NUnitExtension
             var differences = new List<(bool, string, object?, object?)>();
 
             // Normalize parent path (do not trim leading/trailing bracket segments)
-            parentPropertyName = parentPropertyName ?? string.Empty;
+            parentPropertyName ??= string.Empty;
 
             // Track collection pair to avoid infinite recursion but do NOT short-circuit comparison
             if (expectedCollection is object && actualCollection is object)
             {
                 var collectionPair = (expectedCollection as object, actualCollection as object);
-                if (!visited.Contains(collectionPair))
-                    visited.Add(collectionPair);
+                visited.Add(collectionPair);
             }
 
-            if (expectedCollection.Count != actualCollection.Count)
+            if (expectedCollection?.Count != actualCollection?.Count)
             {
-                if (TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedCollection.Count}", $"Count {actualCollection.Count}")))
+                if (TryAddDifference(differences, (false, JoinPath(parentPropertyName, "Count"), $"Count {expectedCollection?.Count}", $"Count {actualCollection?.Count}")))
                     return differences;
                 return differences;
             }
@@ -482,8 +481,8 @@ namespace DeepCompare.NUnitExtension
             }
 
             // Fallback: enumerator with index
-            var expectedEnumerator = expectedCollection.GetEnumerator();
-            var actualEnumerator = actualCollection.GetEnumerator();
+            var expectedEnumerator = expectedCollection?.GetEnumerator();
+            var actualEnumerator = actualCollection?.GetEnumerator();
             var index = 0;
 
             while (expectedEnumerator.MoveNext() && actualEnumerator.MoveNext())
@@ -541,7 +540,7 @@ namespace DeepCompare.NUnitExtension
             return false;
         }
 
-        private bool IsDateTimeLike(Type t)
+        private static bool IsDateTimeLike(Type t)
         {
             return t == typeof(DateTime) || t == typeof(DateTime?) || t == typeof(DateTimeOffset) || t == typeof(DateTimeOffset?);
         }
@@ -618,7 +617,7 @@ namespace DeepCompare.NUnitExtension
         private static string JoinPath(string parent, string segment)
         {
             if (string.IsNullOrEmpty(parent)) return segment;
-            return segment.StartsWith("[") ? parent + segment : parent + "." + segment;
+            return segment.StartsWith("[", StringComparison.OrdinalIgnoreCase) ? parent + segment : parent + "." + segment;
         }
 
         private static bool IsCollectionType(Type t)
@@ -654,7 +653,7 @@ namespace DeepCompare.NUnitExtension
 
         private sealed class ObjectKeyComparer : IEqualityComparer<object?>
         {
-            public bool Equals(object? x, object? y) => object.Equals(x, y);
+            public new bool Equals(object? x, object? y) => object.Equals(x, y);
 
             public int GetHashCode(object? obj) => obj?.GetHashCode() ?? 0;
         }

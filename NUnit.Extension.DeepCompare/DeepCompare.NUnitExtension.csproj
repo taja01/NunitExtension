@@ -9,6 +9,13 @@
     <Version>1.2.0</Version>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="NUnit" Version="4.4.0" />
   </ItemGroup>

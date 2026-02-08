@@ -38,7 +38,7 @@ namespace DeepCompare.NUnitExtension
                 };
 
             var errors = _comparisonResult.Where(x => !x.Success).ToList();
-            if (!errors.Any()) return;
+            if (errors.Count == 0) return;
 
             var limit = ((DeeplyEqualConstraint)Constraint).MaxDifferences;
             if (limit == errors.Count)
