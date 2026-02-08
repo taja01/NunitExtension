@@ -67,11 +67,33 @@ namespace DeepCompare.NUnitExtension
             var expectedType = expected.GetType();
             var actualType = actual.GetType();
 
-            // Different types -> difference
+            // Different types -> normally difference, but allow comparing array/list-like collections
             if (expectedType != actualType)
             {
-                differences.Add((false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"));
-                return differences;
+                if (IsCollectionType(expectedType) && IsCollectionType(actualType))
+                {
+                    var expectedElem = GetElementType(expectedType);
+                    var actualElem = GetElementType(actualType);
+
+                    // If element types are compatible, fall through to collection comparison.
+                    if (expectedElem != null && actualElem != null &&
+                        (expectedElem == actualElem ||
+                         expectedElem.IsAssignableFrom(actualElem) ||
+                         actualElem.IsAssignableFrom(expectedElem)))
+                    {
+                        // treat as comparable collections
+                    }
+                    else
+                    {
+                        differences.Add((false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"));
+                        return differences;
+                    }
+                }
+                else
+                {
+                    differences.Add((false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"));
+                    return differences;
+                }
             }
 
             // For reference types (not value types and not string) detect cycles using the visited pair set.
@@ -196,11 +218,12 @@ namespace DeepCompare.NUnitExtension
             // Normalize parent path (do not trim leading/trailing bracket segments)
             parentPropertyName = parentPropertyName ?? string.Empty;
 
-            // If the collections themselves are reference types we should also check pair-visited
+            // Track collection pair to avoid infinite recursion but do NOT short-circuit comparison
             if (expectedCollection is object && actualCollection is object)
             {
                 var collectionPair = (expectedCollection as object, actualCollection as object);
-                visited.Add(collectionPair);
+                if (!visited.Contains(collectionPair))
+                    visited.Add(collectionPair);
             }
 
             if (expectedCollection.Count != actualCollection.Count)
@@ -376,6 +399,29 @@ namespace DeepCompare.NUnitExtension
         {
             if (string.IsNullOrEmpty(parent)) return segment;
             return segment.StartsWith("[") ? parent + segment : parent + "." + segment;
+        }
+
+        private static bool IsCollectionType(Type t)
+        {
+            if (t == typeof(string)) return false;
+            if (t.IsArray) return true;
+            if (t.GetInterface(nameof(ICollection)) != null) return true;
+            if (t.IsGenericType && t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))) return true;
+            return false;
+        }
+
+        private static Type? GetElementType(Type t)
+        {
+            if (t.IsArray) return t.GetElementType();
+
+            // IList<T> / ICollection<T> / IEnumerable<T>
+            var ie = t.GetInterfaces()
+                      .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+            if (ie != null)
+                return ie.GetGenericArguments()[0];
+
+            // fallback for non-generic collections
+            return typeof(object);
         }
     }
 }

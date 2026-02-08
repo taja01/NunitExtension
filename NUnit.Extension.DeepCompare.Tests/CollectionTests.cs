@@ -8,12 +8,10 @@ namespace DeepCompare.NUnitExtension.Tests
         [Test]
         public void DifferentCollectionTest()
         {
-            var arr = new[] { new object() };
+            var arr = new object[] { };
             var list = new List<object>();
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(arr, Matches.DeeplyWith(list)));
-
-            Assert.That(ex.Message, Does.Contain("Property 'Different Type: ' mismatch: Expected 'List`1', but was 'Object[]'."));
+            Assert.That(arr, Matches.DeeplyWith(list));
         }
 
         [Test]
