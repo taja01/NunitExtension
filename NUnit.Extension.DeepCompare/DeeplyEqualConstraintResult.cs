@@ -25,37 +25,24 @@ namespace DeepCompare.NUnitExtension
         /// <param name="writer">The writer to write the message to.</param>
         public override void WriteMessageTo(MessageWriter writer)
         {
-            // Define a helper method to convert any object to a string representation
-            static object StringHelper(object expectedValue)
-            {
-                // Use a switch expression to handle different cases
-                return expectedValue switch
+            static object StringHelper(object? v) =>
+                v switch
                 {
-                    // If the object is null, return "null"
                     null => "null",
-                    // If the object is a string and is empty, return "string.Empty"
-                    string str when string.IsNullOrEmpty(str) => nameof(string.Empty),
-                    // Otherwise, return the object itself
-                    _ => expectedValue,
+                    string s when s.Length == 0 => "string.Empty",
+                    _ => v
                 };
-            }
 
-            // If the comparison result is not successful, write a message to the writer
-            if (_comparisonResult.All(x => x.Success))
+            var errors = _comparisonResult.Where(x => !x.Success).ToList();
+            if (!errors.Any()) return;
+
+            writer.WriteLine($"Differences found: {errors.Count}. The details are as follows:");
+
+            foreach (var result in errors)
             {
-                return;
-            }
-
-            writer.WriteLine($"Differences found: {_comparisonResult.Count}. The details are as follows:");
-
-            foreach (var result in _comparisonResult.Where(x => !x.Success))
-            {
-                // Use the ternary operator to choose between two messages
-                string message = string.IsNullOrEmpty(result.PropertyName)
+                var message = string.IsNullOrEmpty(result.PropertyName)
                     ? $"Mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'."
                     : $"Property '{result.PropertyName}' mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'.";
-
-                // Write the message to the writer
                 writer.WriteLine(message);
             }
         }

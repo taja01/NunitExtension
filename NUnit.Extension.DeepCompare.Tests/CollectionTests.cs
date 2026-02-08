@@ -43,7 +43,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
-            Assert.That(ex.Message, Does.Contain("Property '.[2]' mismatch: Expected 'Empty', but was 'null'"));
+            Assert.That(ex.Message, Does.Contain("Property '[2]' mismatch: Expected 'string.Empty', but was 'null'."));
         }
 
         [Test]
@@ -55,7 +55,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
-            Assert.That(ex.Message, Does.Contain("Property '.[2]' mismatch: Expected 'null', but was 'Empty'"));
+            Assert.That(ex.Message, Does.Contain("Property '[2]' mismatch: Expected 'null', but was 'string.Empty'"));
         }
 
         [Test]
@@ -67,7 +67,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
-            Assert.That(ex.Message, Does.Contain("Property '.Count' mismatch: Expected 'Count 3', but was 'Count 4'."));
+            Assert.That(ex.Message, Does.Contain("Property 'Count' mismatch: Expected 'Count 3', but was 'Count 4'."));
         }
 
         [Test]
@@ -88,7 +88,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
-            Assert.That(ex.Message, Does.Contain("Property '.[3]' mismatch: Expected '4', but was 'null'."));
+            Assert.That(ex.Message, Does.Contain("Property '[3]' mismatch: Expected '4', but was 'null'."));
         }
 
         [Test]
@@ -100,7 +100,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
-            Assert.That(ex.Message, Does.Contain("Property '.[3]' mismatch: Expected 'null', but was '4'."));
+            Assert.That(ex.Message, Does.Contain("Property '[3]' mismatch: Expected 'null', but was '4'."));
         }
 
         [Test]
@@ -121,7 +121,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var ex = Assert.Throws<AssertionException>(() => Assert.That(expectedList, Matches.DeeplyWith(actualList).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
-            Assert.That(ex.Message, Does.Contain("Property '.[3]' mismatch: Expected '-', but was '+'."));
+            Assert.That(ex.Message, Does.Contain("Property '[3]' mismatch: Expected '-', but was '+'."));
         }
     }
 }

@@ -17,11 +17,19 @@ namespace DeepCompare.NUnitExtension
         private readonly object _expected = expected;
         private readonly DeepCompareOptions _options = options ?? new DeepCompareOptions();
 
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, PropertyInfo[]> _propsCache = new();
+
+        private static PropertyInfo[] GetPropertiesCached(Type t) =>
+            _propsCache.GetOrAdd(t, _ => t.GetProperties(BindingFlags.Public | BindingFlags.Instance));
+
         public override string Description => "Deeply equal objects";
 
         public override ConstraintResult ApplyTo<TActual>(TActual actual)
         {
-            var result = DeepCompare(_expected, actual, string.Empty);
+            // Create a per-assertion visited set of (expected, actual) reference pairs to detect cycles
+            var visited = new HashSet<(object? expected, object? actual)>(PairReferenceComparer.Instance);
+
+            var result = DeepCompare(_expected, actual, string.Empty, visited);
             return new DeeplyEqualConstraintResult(this, actual, result);
         }
 
@@ -37,7 +45,11 @@ namespace DeepCompare.NUnitExtension
             return this;
         }
 
-        private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> DeepCompare(object? expected, object? actual, string parentPropertyName)
+        private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> DeepCompare(
+            object? expected,
+            object? actual,
+            string parentPropertyName,
+            HashSet<(object? expected, object? actual)> visited)
         {
             var differences = new List<(bool, string, object?, object?)>();
 
@@ -48,7 +60,7 @@ namespace DeepCompare.NUnitExtension
             // If only one is null -> difference
             if (expected == null || actual == null)
             {
-                differences.Add((false, $"{parentPropertyName}".TrimEnd('.'), expected, actual));
+                differences.Add((false, parentPropertyName, expected, actual));
                 return differences;
             }
 
@@ -58,8 +70,24 @@ namespace DeepCompare.NUnitExtension
             // Different types -> difference
             if (expectedType != actualType)
             {
-                differences.Add((false, $"Different Type: {parentPropertyName}".TrimEnd('.'), $"{expectedType.Name}", $"{actualType.Name}"));
+                differences.Add((false, $"Different Type: {parentPropertyName}".TrimStart('.'), $"{expectedType.Name}", $"{actualType.Name}"));
                 return differences;
+            }
+
+            // For reference types (not value types and not string) detect cycles using the visited pair set.
+            var isReferenceType = !expectedType.IsValueType && !(expected is string);
+            if (isReferenceType)
+            {
+                var pair = (expected, actual);
+                if (visited.Contains(pair))
+                {
+                    // We've already compared this pair on this top-level comparison.
+                    // Treat revisited pair as equal to avoid infinite recursion.
+                    return differences;
+                }
+
+                // Track this pair for the duration of the top-level comparison.
+                visited.Add(pair);
             }
 
             // Value types (including primitives, enums, structs) and strings
@@ -70,24 +98,25 @@ namespace DeepCompare.NUnitExtension
                 {
                     if (!CompareDateTimesWithTolerance(expected, actual, parentPropertyName, out var matched))
                     {
-                        differences.Add((false, $"{parentPropertyName}".TrimEnd('.'), expected, actual));
+                        differences.Add((false, parentPropertyName, expected, actual));
                     }
                     return differences;
                 }
 
                 if (!Equals(expected, actual))
                 {
-                    differences.Add((false, $"{parentPropertyName}".TrimEnd('.'), expected, actual));
+                    differences.Add((false, parentPropertyName, expected, actual));
                 }
+
                 return differences;
             }
 
-            // Collections
+            // Collections (ICollection) - prefer IList for index-based comparison
             if (expectedType.GetInterface(nameof(ICollection)) != null)
             {
                 if (expected is ICollection expectedList && actual is ICollection actualList)
                 {
-                    var nestedResult = CompareLists(expectedList, actualList, $"{parentPropertyName}".TrimEnd('.') + ".");
+                    var nestedResult = CompareLists(expectedList, actualList, parentPropertyName, visited);
                     if (nestedResult.Any(x => !x.Success))
                         differences.AddRange(nestedResult);
                     return differences;
@@ -95,10 +124,10 @@ namespace DeepCompare.NUnitExtension
             }
 
             // Reference type: iterate properties
-            var props = expectedType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var props = GetPropertiesCached(expectedType);
             foreach (var prop in props)
             {
-                var fullName = string.IsNullOrEmpty(parentPropertyName) ? prop.Name : $"{parentPropertyName}{prop.Name}";
+                var fullName = JoinPath(parentPropertyName, prop.Name);
                 // Skip check: match exact or suffix
                 if (IsSkipped(fullName))
                     continue;
@@ -121,7 +150,7 @@ namespace DeepCompare.NUnitExtension
                 // If collection
                 if (expectedValue is ICollection expectedColl && actualValue is ICollection actualColl)
                 {
-                    var nested = CompareLists(expectedColl, actualColl, $"{fullName}.");
+                    var nested = CompareLists(expectedColl, actualColl, fullName, visited);
                     if (nested.Any(x => !x.Success))
                         differences.AddRange(nested);
                     continue;
@@ -147,8 +176,8 @@ namespace DeepCompare.NUnitExtension
                     continue;
                 }
 
-                // Complex object -> recurse
-                var nestedResult = DeepCompare(expectedValue, actualValue, $"{fullName}.");
+                // Complex object -> recurse, pass visited set to detect cycles
+                var nestedResult = DeepCompare(expectedValue, actualValue, fullName, visited);
                 if (nestedResult.Any(x => !x.Success))
                     differences.AddRange(nestedResult);
             }
@@ -156,16 +185,64 @@ namespace DeepCompare.NUnitExtension
             return differences;
         }
 
-        private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> CompareLists(ICollection expectedCollection, ICollection actualCollection, string parentPropertyName)
+        private List<(bool Success, string PropertyName, object? ExpectedValue, object? ActualValue)> CompareLists(
+            ICollection expectedCollection,
+            ICollection actualCollection,
+            string parentPropertyName,
+            HashSet<(object? expected, object? actual)> visited)
         {
             var differences = new List<(bool, string, object?, object?)>();
 
+            // Normalize parent path (do not trim leading/trailing bracket segments)
+            parentPropertyName = parentPropertyName ?? string.Empty;
+
+            // If the collections themselves are reference types we should also check pair-visited
+            if (expectedCollection is object && actualCollection is object)
+            {
+                var collectionPair = (expectedCollection as object, actualCollection as object);
+                //if (visited.Contains(collectionPair))
+                //    return differences;
+                visited.Add(collectionPair);
+            }
+
             if (expectedCollection.Count != actualCollection.Count)
             {
-                differences.Add((false, $"{parentPropertyName}Count".TrimEnd('.'), $"Count {expectedCollection.Count}", $"Count {actualCollection.Count}"));
+                differences.Add((false, JoinPath(parentPropertyName, "Count"), $"Count {expectedCollection.Count}", $"Count {actualCollection.Count}"));
                 return differences;
             }
 
+            // Prefer IList for stable index access
+            if (expectedCollection is IList expectedList && actualCollection is IList actualList)
+            {
+                for (var i = 0; i < expectedList.Count; i++)
+                {
+                    var expectedElement = expectedList[i];
+                    var actualElement = actualList[i];
+
+                    var elementPath = JoinPath(parentPropertyName, $"[{i}]");
+
+                    // explicit null-vs-value check to ensure differences for nullable elements are reported
+                    if (expectedElement == null && actualElement == null)
+                    {
+                        // equal, continue
+                        continue;
+                    }
+
+                    if (expectedElement == null || actualElement == null)
+                    {
+                        differences.Add((false, elementPath, expectedElement, actualElement));
+                        continue;
+                    }
+
+                    var nestedResult = DeepCompare(expectedElement, actualElement, elementPath, visited);
+                    if (nestedResult.Any(x => !x.Success))
+                        differences.AddRange(nestedResult);
+                }
+
+                return differences;
+            }
+
+            // Fallback: enumerator with index
             var expectedEnumerator = expectedCollection.GetEnumerator();
             var actualEnumerator = actualCollection.GetEnumerator();
             var index = 0;
@@ -174,7 +251,24 @@ namespace DeepCompare.NUnitExtension
             {
                 var expectedElement = expectedEnumerator.Current;
                 var actualElement = actualEnumerator.Current;
-                var nestedResult = DeepCompare(expectedElement, actualElement, $"{parentPropertyName}[{index}].");
+
+                var elementPath = JoinPath(parentPropertyName, $"[{index}]");
+
+                // explicit null-vs-value check for enumerator fallback
+                if (expectedElement == null && actualElement == null)
+                {
+                    index++;
+                    continue;
+                }
+
+                if (expectedElement == null || actualElement == null)
+                {
+                    differences.Add((false, elementPath, expectedElement, actualElement));
+                    index++;
+                    continue;
+                }
+
+                var nestedResult = DeepCompare(expectedElement, actualElement, elementPath, visited);
 
                 if (nestedResult.Any(x => !x.Success))
                 {
@@ -278,6 +372,12 @@ namespace DeepCompare.NUnitExtension
             var diff = (expectedDto - actualDto).Duration();
             matched = diff <= tolerance.Value;
             return matched;
+        }
+
+        private static string JoinPath(string parent, string segment)
+        {
+            if (string.IsNullOrEmpty(parent)) return segment;
+            return segment.StartsWith("[") ? parent + segment : parent + "." + segment;
         }
     }
 }
