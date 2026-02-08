@@ -3,59 +3,62 @@
 namespace DeepCompare.NUnitExtension
 {
     /// <summary>
-    /// Represents the result of applying a DeeplyEqualConstraint to an actual value.
+    /// Represents the result of applying a <see cref="DeeplyEqualConstraint"/> to an actual value.
+    /// Holds the comparison tuple entries and is responsible for writing user-friendly failure messages.
     /// </summary>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="DeeplyEqualConstraintResult"/> class.
-    /// </remarks>
     /// <param name="constraint">The constraint that was applied.</param>
     /// <param name="actualValue">The actual value to which the constraint was applied.</param>
-    /// <param name="comparisonResult">The result of the deep equality comparison.</param>
-    public class DeeplyEqualConstraintResult(IConstraint constraint, object? actualValue, List<(bool success, string propertyName, object? expectedValue, object? actualValue)> comparisonResult) : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
+    /// <param name="comparisonResult">The per-property comparison result tuples.</param>
+    public class DeeplyEqualConstraintResult(IConstraint constraint, object? actualValue, List<(bool success, string propertyName, object? expectedValue, object? actualValue)> comparisonResult)
+        : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
     {
+        private readonly IConstraint _constraint = constraint;
+
+        /// <summary>
+        /// Number of differences (entries where Success == false).
+        /// </summary>
         public int ErrorCount => _comparisonResult.Count(x => !x.Success);
+
+
 
 #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
         private readonly List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> _comparisonResult = comparisonResult;
 #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
 
         /// <summary>
-        /// Writes the failure message for this result to the specified writer.
+        /// Writes detailed failure information to the supplied <see cref="MessageWriter"/>.
         /// </summary>
-        /// <param name="writer">The writer to write the message to.</param>
+        /// <param name="writer">The writer used by NUnit to display assertion failures.</param>
         public override void WriteMessageTo(MessageWriter writer)
         {
-            // Define a helper method to convert any object to a string representation
-            static object StringHelper(object expectedValue)
-            {
-                // Use a switch expression to handle different cases
-                return expectedValue switch
+            static object StringHelper(object? v) =>
+                v switch
                 {
-                    // If the object is null, return "null"
                     null => "null",
-                    // If the object is a string and is empty, return "string.Empty"
-                    string str when string.IsNullOrEmpty(str) => nameof(string.Empty),
-                    // Otherwise, return the object itself
-                    _ => expectedValue,
+                    string s when s.Length == 0 => "string.Empty",
+                    _ => v
                 };
-            }
 
-            // If the comparison result is not successful, write a message to the writer
-            if (_comparisonResult.All(x => x.Success))
+            var errors = _comparisonResult.Where(x => !x.Success).ToList();
+            if (errors.Count == 0)
             {
                 return;
             }
 
-            writer.WriteLine($"Differences found: {_comparisonResult.Count}. The details are as follows:");
-
-            foreach (var result in _comparisonResult.Where(x => !x.Success))
+            var limit = ((DeeplyEqualConstraint)_constraint).MaxDifferences;
+            if (limit == errors.Count)
             {
-                // Use the ternary operator to choose between two messages
-                string message = string.IsNullOrEmpty(result.PropertyName)
+                writer.WriteLine($"Maximum limit of {limit} reached.");
+            }
+
+            writer.WriteLine($"Differences found: {errors.Count}. The details are as follows:");
+
+            foreach (var result in errors)
+            {
+                var message = string.IsNullOrEmpty(result.PropertyName)
                     ? $"Mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'."
                     : $"Property '{result.PropertyName}' mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'.";
 
-                // Write the message to the writer
                 writer.WriteLine(message);
             }
         }
