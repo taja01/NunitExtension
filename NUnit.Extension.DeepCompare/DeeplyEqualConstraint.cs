@@ -234,28 +234,31 @@ namespace DeepCompare.NUnitExtension
             if (!visited.Contains(dictPair))
                 visited.Add(dictPair);
 
-            // Try non-generic IDictionary first
+            // Non-generic IDictionary fast path
             if (expectedDictObj is IDictionary expectedNonGen && actualDictObj is IDictionary actualNonGen)
             {
-                // Count difference
                 if (expectedNonGen.Count != actualNonGen.Count)
                 {
                     differences.Add((false, JoinPath(parentPropertyName, "Count"), $"Count {expectedNonGen.Count}", $"Count {actualNonGen.Count}"));
-                    // continue to report key differences as well
+                    // continue to find key diffs
                 }
 
-                // Check keys from expected
+                // Build fast lookup of actual keys -> values (object equality)
+                var actualLookup = new Dictionary<object?, object?>(actualNonGen.Count, new ObjectKeyComparer());
+                foreach (var key in actualNonGen.Keys)
+                    actualLookup[key] = actualNonGen[key];
+
+                // Compare expected keys
                 foreach (var key in expectedNonGen.Keys)
                 {
                     var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(key)}]");
-                    if (!actualNonGen.Contains(key))
+                    if (!actualLookup.TryGetValue(key, out var actualVal))
                     {
                         differences.Add((false, keyPath, expectedNonGen[key], null));
                         continue;
                     }
 
-                    var actualValue = actualNonGen[key];
-                    var nested = DeepCompare(expectedNonGen[key], actualValue, keyPath, visited);
+                    var nested = DeepCompare(expectedNonGen[key], actualVal, keyPath, visited);
                     if (nested.Any(x => !x.Success))
                         differences.AddRange(nested);
                 }
@@ -273,43 +276,44 @@ namespace DeepCompare.NUnitExtension
                 return differences;
             }
 
-            // Fallback: generic IDictionary via enumeration of KeyValuePair<,> or any enumerable of KeyValuePair<,>
+            // Generic dictionaries or enumerable-of-KVP fallback
             var expectedEntries = EnumerateKeyValuePairs(expectedDictObj).ToList();
             var actualEntries = EnumerateKeyValuePairs(actualDictObj).ToList();
 
             if (expectedEntries.Count != actualEntries.Count)
             {
                 differences.Add((false, JoinPath(parentPropertyName, "Count"), $"Count {expectedEntries.Count}", $"Count {actualEntries.Count}"));
-                // continue; still check keys
+                // continue to find key diffs
             }
 
-            // For each expected key find matching actual by equality
-            var matchedActualIndices = new HashSet<int>();
-            for (int i = 0; i < expectedEntries.Count; i++)
+            // Build actual lookup using object equality for keys (O(n))
+            var actualLookupGeneric = new Dictionary<object?, object?>(new ObjectKeyComparer());
+            foreach (var (k, v) in actualEntries)
+                actualLookupGeneric[k] = v;
+
+            // Compare expected entries using lookup
+            foreach (var (eKey, eValue) in expectedEntries)
             {
-                var (eKey, eValue) = expectedEntries[i];
-                var matchIndex = actualEntries.FindIndex(a => KeysEqual(a.key, eKey));
                 var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(eKey)}]");
-                if (matchIndex == -1)
+                if (!actualLookupGeneric.TryGetValue(eKey, out var aValue))
                 {
                     differences.Add((false, keyPath, eValue, null));
                     continue;
                 }
 
-                matchedActualIndices.Add(matchIndex);
-                var aValue = actualEntries[matchIndex].value;
                 var nested = DeepCompare(eValue, aValue, keyPath, visited);
                 if (nested.Any(x => !x.Success))
                     differences.AddRange(nested);
             }
 
-            // Any actual keys not matched are extras
-            for (int i = 0; i < actualEntries.Count; i++)
+            // Find extra keys in actual
+            foreach (var (aKey, aValue) in actualEntries)
             {
-                if (matchedActualIndices.Contains(i)) continue;
-                var (aKey, aValue) = actualEntries[i];
-                var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(aKey)}]");
-                differences.Add((false, keyPath, null, aValue));
+                if (!expectedEntries.Any(e => KeysEqual(e.key, aKey)))
+                {
+                    var keyPath = JoinPath(parentPropertyName, $"[{FormatKey(aKey)}]");
+                    differences.Add((false, keyPath, null, aValue));
+                }
             }
 
             return differences;
@@ -579,6 +583,13 @@ namespace DeepCompare.NUnitExtension
 
             // fallback for non-generic collections
             return typeof(object);
+        }
+
+        private sealed class ObjectKeyComparer : IEqualityComparer<object?>
+        {
+            public bool Equals(object? x, object? y) => object.Equals(x, y);
+
+            public int GetHashCode(object? obj) => obj?.GetHashCode() ?? 0;
         }
     }
 }
