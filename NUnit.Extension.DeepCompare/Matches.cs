@@ -88,6 +88,9 @@ namespace DeepCompare.NUnitExtension
         /// <summary>
         /// Optional explicit Build() - returns the constraint (no-op).
         /// </summary>
-        public DeeplyEqualConstraint Build() => this;
+        public DeeplyEqualConstraint Build()
+        {
+            return this;
+        }
     }
 }

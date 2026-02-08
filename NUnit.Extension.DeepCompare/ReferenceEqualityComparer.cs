@@ -16,12 +16,18 @@ namespace DeepCompare.NUnitExtension
         /// <summary>
         /// Returns true when both references point to the same object instance.
         /// </summary>
-        public new bool Equals(object? x, object? y) => ReferenceEquals(x, y);
+        public new bool Equals(object? x, object? y)
+        {
+            return ReferenceEquals(x, y);
+        }
 
         /// <summary>
         /// Returns a hash based on the object reference (not the object.GetHashCode implementation).
         /// </summary>
-        public int GetHashCode(object? obj) => obj is null ? 0 : RuntimeHelpers.GetHashCode(obj);
+        public int GetHashCode(object? obj)
+        {
+            return obj is null ? 0 : RuntimeHelpers.GetHashCode(obj);
+        }
     }
 
     /// <summary>

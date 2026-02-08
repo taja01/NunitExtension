@@ -22,8 +22,10 @@ namespace DeepCompare.NUnitExtension
 
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, PropertyInfo[]> _propsCache = new();
 
-        private static PropertyInfo[] GetPropertiesCached(Type t) =>
-            _propsCache.GetOrAdd(t, _ => t.GetProperties(BindingFlags.Public | BindingFlags.Instance));
+        private static PropertyInfo[] GetPropertiesCached(Type t)
+        {
+            return _propsCache.GetOrAdd(t, _ => t.GetProperties(BindingFlags.Public | BindingFlags.Instance));
+        }
 
         /// <summary>
         /// Short textual description of the constraint used by NUnit.
@@ -304,10 +306,7 @@ namespace DeepCompare.NUnitExtension
 
             // Track pair to prevent infinite recursion but do not short-circuit
             var dictPair = (expectedDictObj as object, actualDictObj as object);
-            if (!visited.Contains(dictPair))
-            {
-                visited.Add(dictPair);
-            }
+            visited.Add(dictPair);
 
             // Non-generic IDictionary fast path
             if (expectedDictObj is IDictionary expectedNonGen && actualDictObj is IDictionary actualNonGen)
@@ -766,9 +765,15 @@ namespace DeepCompare.NUnitExtension
 
         private sealed class ObjectKeyComparer : IEqualityComparer<object?>
         {
-            public new bool Equals(object? x, object? y) => object.Equals(x, y);
+            public new bool Equals(object? x, object? y)
+            {
+                return object.Equals(x, y);
+            }
 
-            public int GetHashCode(object? obj) => obj?.GetHashCode() ?? 0;
+            public int GetHashCode(object? obj)
+            {
+                return obj?.GetHashCode() ?? 0;
+            }
         }
     }
 }
