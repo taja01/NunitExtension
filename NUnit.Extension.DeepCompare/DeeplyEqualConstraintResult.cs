@@ -12,12 +12,14 @@ namespace DeepCompare.NUnitExtension
     public class DeeplyEqualConstraintResult(IConstraint constraint, object? actualValue, List<(bool success, string propertyName, object? expectedValue, object? actualValue)> comparisonResult)
         : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
     {
+        private readonly IConstraint Constraint = constraint;
+
         /// <summary>
         /// Number of differences (entries where Success == false).
         /// </summary>
         public int ErrorCount => _comparisonResult.Count(x => !x.Success);
 
-        public IConstraint Constraint => constraint;
+
 
 #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
         private readonly List<(bool Success, string PropertyName, object ExpectedValue, object ActualValue)> _comparisonResult = comparisonResult;
