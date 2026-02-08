@@ -11,7 +11,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var expected = new List<int?> { 1, null, 3 };
             var actual = new List<int?> { 1, null, 3 };
 
-            Assert.That(expected, Matches.DeeplyWith(actual).Build());
+            Assert.That(expected, Matches.DeeplyWith(actual));
         }
 
         [Test]
@@ -21,7 +21,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = new List<int?> { 1, 2, 3 };
 
             var ex = Assert.Throws<AssertionException>(() =>
-                Assert.That(expected, Matches.DeeplyWith(actual).Build()));
+                Assert.That(expected, Matches.DeeplyWith(actual)));
 
             Assert.That(ex.Message, Does.Contain("[1]"));
             Assert.That(ex.Message, Does.Contain("Expected '2'").Or.Contains("Expected 'null'"));
@@ -34,7 +34,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = new List<string?> { "a", "b" };
 
             var ex = Assert.Throws<AssertionException>(() =>
-                Assert.That(expected, Matches.DeeplyWith(actual).Build()));
+                Assert.That(expected, Matches.DeeplyWith(actual)));
 
             Assert.That(ex.Message, Does.Contain("Count"));
         }
@@ -49,7 +49,7 @@ namespace DeepCompare.NUnitExtension.Tests
             Assert.That(expected,
                 Matches.DeeplyWith(actual)
                     .WithGlobalDateTimeTolerance(TimeSpan.FromSeconds(1))
-                    .Build());
+                    );
         }
 
         [Test]
@@ -59,7 +59,7 @@ namespace DeepCompare.NUnitExtension.Tests
             object? boxedActual = (int?)null;
 
             var ex = Assert.Throws<AssertionException>(() =>
-                Assert.That(new[] { boxedExpected }, Matches.DeeplyWith(new[] { boxedActual }).Build()));
+                Assert.That(new[] { boxedExpected }, Matches.DeeplyWith(new[] { boxedActual })));
 
             Assert.That(ex.Message, Does.Contain("[0]"));
         }

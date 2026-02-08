@@ -12,7 +12,7 @@ namespace DeepCompare.NUnitExtension
     /// </remarks>
     /// <param name="expected">The expected object to compare with</param>
     /// <param name="options">Options to control comparison behavior</param>
-    public class DeeplyEqualConstraint(object expected, DeepCompareOptions? options = null) : Constraint
+    public partial class DeeplyEqualConstraint(object expected, DeepCompareOptions? options = null) : Constraint
     {
         private readonly object _expected = expected;
         private readonly DeepCompareOptions _options = options ?? new DeepCompareOptions();

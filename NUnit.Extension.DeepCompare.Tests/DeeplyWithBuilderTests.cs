@@ -25,7 +25,7 @@ namespace DeepCompare.NUnitExtension.Tests
             };
 
             // DeeplyWith now returns a builder but has implicit conversion to the Constraint.
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected).Build()));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
             Assert.That(ex.Message, Does.Contain("Property 'Method'"));
         }
 
@@ -45,7 +45,7 @@ namespace DeepCompare.NUnitExtension.Tests
             };
 
             // Skip the 'Method' property using the fluent builder
-            Assert.DoesNotThrow(() => Assert.That(actual, Matches.DeeplyWith(expected).Skip("Method").Build()));
+            Assert.DoesNotThrow(() => Assert.That(actual, Matches.DeeplyWith(expected).Skip("Method")));
         }
 
         [Test]
@@ -57,7 +57,7 @@ namespace DeepCompare.NUnitExtension.Tests
 
             // Global tolerance 1 second => should pass
             Assert.DoesNotThrow(() =>
-                Assert.That(actual, Matches.DeeplyWith(expected).WithGlobalDateTimeTolerance(TimeSpan.FromSeconds(1)).Build()));
+                Assert.That(actual, Matches.DeeplyWith(expected).WithGlobalDateTimeTolerance(TimeSpan.FromSeconds(1))));
         }
 
         [Test]
@@ -72,7 +72,7 @@ namespace DeepCompare.NUnitExtension.Tests
                 Assert.That(actual,
                     Matches.DeeplyWith(expected)
                         .WithGlobalDateTimeTolerance(TimeSpan.FromSeconds(1))
-                        .WithDateTimeTolerance(nameof(TimeHolder.CreatedAt), TimeSpan.FromSeconds(3)).Build()));
+                        .WithDateTimeTolerance(nameof(TimeHolder.CreatedAt), TimeSpan.FromSeconds(3))));
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = new ResponseBody { IsSuccess = true, Message = "A" };
             var expected = new ResponseBody { IsSuccess = true, Message = "B" };
 
-            var constraint = Matches.DeeplyWith(expected).Skip(nameof(ResponseBody.Message)).Build();
+            var constraint = Matches.DeeplyWith(expected).Skip(nameof(ResponseBody.Message));
 
             // Because we skipped Message, the objects are considered equal
             Assert.DoesNotThrow(() => Assert.That(actual, constraint));

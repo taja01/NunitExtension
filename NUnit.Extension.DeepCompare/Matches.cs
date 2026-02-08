@@ -2,57 +2,50 @@
 {
     public class Matches : NUnit.Framework.Is
     {
-        public static DeeplyWithBuilder DeeplyWith(object expected, Action<DeepCompareOptions>? configure = null)
+        public static DeeplyEqualConstraint DeeplyWith(object expected, System.Action<DeepCompareOptions>? configure = null)
         {
             var options = new DeepCompareOptions();
             configure?.Invoke(options);
-            return new DeeplyWithBuilder(expected, options);
+            return new DeeplyEqualConstraint(expected, options);
+        }
+    }
+
+    public partial class DeeplyEqualConstraint
+    {
+        /// <summary>
+        /// Fluent helper to skip a property (convenience wrapper around Options).
+        /// Usage: Matches.DeeplyWith(expected).Skip("Inner.Message")
+        /// </summary>
+        public DeeplyEqualConstraint Skip(string propertyPath)
+        {
+            if (!string.IsNullOrEmpty(propertyPath))
+                _options.Skip(propertyPath);
+            return this;
         }
 
         /// <summary>
-        /// Small fluent builder returned from Matches.DeeplyWith(...)
-        /// Implicitly converts to the underlying Constraint so existing usages
-        /// like Assert.That(actual, Matches.DeeplyWith(expected)) keep working.
+        /// Fluent helper to set a global DateTime tolerance.
+        /// Usage: Matches.DeeplyWith(expected).WithGlobalDateTimeTolerance(TimeSpan.FromSeconds(1))
         /// </summary>
-        public sealed class DeeplyWithBuilder
+        public DeeplyEqualConstraint WithGlobalDateTimeTolerance(TimeSpan tolerance)
         {
-            private readonly DeeplyEqualConstraint _constraint;
-
-            internal DeeplyWithBuilder(object expected, DeepCompareOptions options)
-            {
-                _constraint = new DeeplyEqualConstraint(expected, options);
-            }
-
-            public DeeplyWithBuilder WithOptions(Action<DeepCompareOptions> configure)
-            {
-                if (configure is null) return this;
-                _constraint.WithOptions(configure);
-                return this;
-            }
-
-            public DeeplyWithBuilder Skip(string propertyPath)
-            {
-                _constraint.WithOptions(o => o.Skip(propertyPath));
-                return this;
-            }
-
-            public DeeplyWithBuilder WithGlobalDateTimeTolerance(TimeSpan tolerance)
-            {
-                _constraint.WithOptions(o => o.WithGlobalDateTimeTolerance(tolerance));
-                return this;
-            }
-
-            public DeeplyWithBuilder WithDateTimeTolerance(string propertyPath, TimeSpan tolerance)
-            {
-                _constraint.WithOptions(o => o.WithDateTimeTolerance(propertyPath, tolerance));
-                return this;
-            }
-
-            public DeeplyEqualConstraint Build() => _constraint;
-
-            // Allow use directly in Assert.That(...) and other APIs expecting a Constraint
-            public static implicit operator DeeplyEqualConstraint(DeeplyWithBuilder b) => b._constraint;
-            public static implicit operator NUnit.Framework.Constraints.Constraint(DeeplyWithBuilder b) => b._constraint;
+            _options.WithGlobalDateTimeTolerance(tolerance);
+            return this;
         }
+
+        /// <summary>
+        /// Fluent helper to set a per-property DateTime tolerance.
+        /// </summary>
+        public DeeplyEqualConstraint WithDateTimeTolerance(string propertyPath, TimeSpan tolerance)
+        {
+            if (!string.IsNullOrEmpty(propertyPath))
+                _options.WithDateTimeTolerance(propertyPath, tolerance);
+            return this;
+        }
+
+        /// <summary>
+        /// Optional explicit Build() - returns the constraint (no-op).
+        /// </summary>
+        public DeeplyEqualConstraint Build() => this;
     }
 }
