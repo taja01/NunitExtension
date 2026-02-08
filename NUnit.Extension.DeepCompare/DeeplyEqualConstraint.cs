@@ -632,7 +632,7 @@ namespace DeepCompare.NUnitExtension
             {
                 if (expected is DateTime dtExp)
                 {
-                    expectedDto = new DateTimeOffset(dtExp);
+                    expectedDto = new DateTimeOffset(dtExp, TimeSpan.Zero);
                 }
                 else if (expected is DateTimeOffset dtoExp)
                 {
@@ -646,7 +646,7 @@ namespace DeepCompare.NUnitExtension
 
                 if (actual is DateTime dtAct)
                 {
-                    actualDto = new DateTimeOffset(dtAct);
+                    actualDto = new DateTimeOffset(dtAct, TimeSpan.Zero);
                 }
                 else if (actual is DateTimeOffset dtoAct)
                 {
