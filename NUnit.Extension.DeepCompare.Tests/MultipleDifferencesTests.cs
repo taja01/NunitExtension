@@ -24,7 +24,7 @@ namespace DeepCompare.NUnitExtension.Tests
                 StatusCode = 400
             };
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(response1, Matches.DeeplyWith(response2)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(response1, Matches.DeeplyWith(response2).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 4. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'StatusCode' mismatch: Expected '400', but was '202'."));
@@ -54,7 +54,7 @@ namespace DeepCompare.NUnitExtension.Tests
                 InnerMessage = new InnerMessage { Message = "Dev" }
             };
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(response1, Matches.DeeplyWith(response2)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(response1, Matches.DeeplyWith(response2).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 2. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'StatusCode' mismatch: Expected '200', but was '202'."));
@@ -84,7 +84,7 @@ namespace DeepCompare.NUnitExtension.Tests
                 Numbers = [7, 6, 5, 4, 3, 2, 1]
             };
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(response1, Matches.DeeplyWith(response2)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(response1, Matches.DeeplyWith(response2).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 3. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'StatusCode' mismatch: Expected '200', but was '202'."));

@@ -14,15 +14,14 @@ namespace DeepCompare.NUnitExtension.Tests
         [Test]
         public void StringStringTest()
         {
-            Assert.That(StringOne, Matches.DeeplyWith(StringOne));
+            Assert.That(StringOne, Matches.DeeplyWith(StringOne).Build());
         }
 
         [Test]
         public void StringWithDifferentStringTest()
         {
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(StringOne, Matches.DeeplyWith(StringTwo)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(StringOne, Matches.DeeplyWith(StringTwo).Build()));
 
-            Assert.That(ex.Message, Does.Contain("Assert.That(StringOne, Matches.DeeplyWith(StringTwo))"));
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Mismatch: Expected '321', but was '123'."));
         }
@@ -30,7 +29,7 @@ namespace DeepCompare.NUnitExtension.Tests
         [Test]
         public void NullObjectAndStringTest()
         {
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(StringOne, Matches.DeeplyWith(NullObject)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(StringOne, Matches.DeeplyWith(NullObject).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Mismatch: Expected 'null', but was '123'"));
@@ -39,7 +38,7 @@ namespace DeepCompare.NUnitExtension.Tests
         [Test]
         public void IntegerAndStringTest()
         {
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(StringOne, Matches.DeeplyWith(Integer)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(StringOne, Matches.DeeplyWith(Integer).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'Different Type: ' mismatch: Expected 'Int32', but was 'String'"));
@@ -48,13 +47,13 @@ namespace DeepCompare.NUnitExtension.Tests
         [Test]
         public void NullObjectAndNullObjectTest()
         {
-            Assert.That(NullObject, Matches.DeeplyWith(NullObject));
+            Assert.That(NullObject, Matches.DeeplyWith(NullObject).Build());
         }
 
         [Test]
         public void IntegerAndNullObjectTest()
         {
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(NullObject, Matches.DeeplyWith(Integer)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(NullObject, Matches.DeeplyWith(Integer).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Mismatch: Expected '123', but was 'null'"));

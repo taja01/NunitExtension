@@ -11,7 +11,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = new ResponseBody();
             var expected = new ResponseBody();
 
-            Assert.That(actual, Matches.DeeplyWith(expected));
+            Assert.That(actual, Matches.DeeplyWith(expected).Build());
         }
 
         [Test]
@@ -20,7 +20,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = new ResponseBody { IsSuccess = true };
             var expected = new ResponseBody { IsSuccess = true };
 
-            Assert.That(actual, Matches.DeeplyWith(expected));
+            Assert.That(actual, Matches.DeeplyWith(expected).Build());
         }
 
         [Test]
@@ -29,7 +29,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = new ResponseBody { IsSuccess = true };
             var expected = new ResponseBody { IsSuccess = false };
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'IsSuccess' mismatch: Expected 'False', but was 'True'."));
@@ -41,7 +41,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = new ResponseBody { IsSuccess = true, Strings = ["22", "44"] };
             var expected = new ResponseBody { IsSuccess = true, Strings = ["22", "34"] };
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'Strings.[1]' mismatch: Expected '34', but was '44'."));
@@ -53,7 +53,7 @@ namespace DeepCompare.NUnitExtension.Tests
             var actual = new ResponseBody { IsSuccess = true, Numbers = [1, 2, 3] };
             var expected = new ResponseBody { IsSuccess = true, Numbers = [3, 2, 1] };
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 2. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'Numbers.[0]' mismatch: Expected '3', but was '1'."));
@@ -77,7 +77,7 @@ namespace DeepCompare.NUnitExtension.Tests
                 Numbers = [1, 2, 3],
             };
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'Method' mismatch: Expected 'null', but was 'GET'."));
@@ -103,7 +103,7 @@ namespace DeepCompare.NUnitExtension.Tests
                 InnerMessage = new InnerMessage { Message = "Waiting" }
             };
 
-            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected)));
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual, Matches.DeeplyWith(expected).Build()));
 
             Assert.That(ex.Message, Does.Contain("Differences found: 1. The details are as follows:"));
             Assert.That(ex.Message, Does.Contain("Property 'InnerMessage.Message' mismatch: Expected 'Waiting', but was 'Done'."));
