@@ -3,16 +3,18 @@
 namespace DeepCompare.NUnitExtension
 {
     /// <summary>
-    /// Represents the result of applying a DeeplyEqualConstraint to an actual value.
+    /// Represents the result of applying a <see cref="DeeplyEqualConstraint"/> to an actual value.
+    /// Holds the comparison tuple entries and is responsible for writing user-friendly failure messages.
     /// </summary>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="DeeplyEqualConstraintResult"/> class.
-    /// </remarks>
     /// <param name="constraint">The constraint that was applied.</param>
     /// <param name="actualValue">The actual value to which the constraint was applied.</param>
-    /// <param name="comparisonResult">The result of the deep equality comparison.</param>
-    public class DeeplyEqualConstraintResult(IConstraint constraint, object? actualValue, List<(bool success, string propertyName, object? expectedValue, object? actualValue)> comparisonResult) : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
+    /// <param name="comparisonResult">The per-property comparison result tuples.</param>
+    public class DeeplyEqualConstraintResult(IConstraint constraint, object? actualValue, List<(bool success, string propertyName, object? expectedValue, object? actualValue)> comparisonResult)
+        : ConstraintResult(constraint, actualValue, comparisonResult.All(x => x.success))
     {
+        /// <summary>
+        /// Number of differences (entries where Success == false).
+        /// </summary>
         public int ErrorCount => _comparisonResult.Count(x => !x.Success);
 
 #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
@@ -20,9 +22,9 @@ namespace DeepCompare.NUnitExtension
 #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
 
         /// <summary>
-        /// Writes the failure message for this result to the specified writer.
+        /// Writes detailed failure information to the supplied <see cref="MessageWriter"/>.
         /// </summary>
-        /// <param name="writer">The writer to write the message to.</param>
+        /// <param name="writer">The writer used by NUnit to display assertion failures.</param>
         public override void WriteMessageTo(MessageWriter writer)
         {
             static object StringHelper(object? v) =>
@@ -43,6 +45,7 @@ namespace DeepCompare.NUnitExtension
                 var message = string.IsNullOrEmpty(result.PropertyName)
                     ? $"Mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'."
                     : $"Property '{result.PropertyName}' mismatch: Expected '{StringHelper(result.ExpectedValue)}', but was '{StringHelper(result.ActualValue)}'.";
+
                 writer.WriteLine(message);
             }
         }
