@@ -160,7 +160,7 @@ namespace DeepCompare.NUnitExtension
                 // DateTime / DateTimeOffset handling with tolerance
                 if (IsDateTimeLike(expectedType))
                 {
-                    if (!CompareDateTimesWithTolerance(expected, actual, parentPropertyName, out var matched))
+                    if (!CompareDateTimesWithTolerance(expected, actual, parentPropertyName, out var _))
                     {
                         if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
                         {
@@ -172,7 +172,7 @@ namespace DeepCompare.NUnitExtension
 
                 if (IsTimeSpanLike(expectedType))
                 {
-                    if (!CompareTimeSpanWithTolerance(expected, actual, parentPropertyName, out var matched))
+                    if (!CompareTimeSpanWithTolerance(expected, actual, parentPropertyName, out var _))
                     {
                         if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
                         {
@@ -275,7 +275,7 @@ namespace DeepCompare.NUnitExtension
                     // DateTime handling
                     if (IsDateTimeLike(expectedValue.GetType()))
                     {
-                        if (!CompareDateTimesWithTolerance(expectedValue, actualValue, fullName, out var matchedDT))
+                        if (!CompareDateTimesWithTolerance(expectedValue, actualValue, fullName, out var _))
                         {
                             if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
                             {
@@ -287,7 +287,7 @@ namespace DeepCompare.NUnitExtension
 
                     if (IsTimeSpanLike(expectedValue.GetType()))
                     {
-                        if (!CompareTimeSpanWithTolerance(expectedValue, actualValue, fullName, out var matchedTS))
+                        if (!CompareTimeSpanWithTolerance(expectedValue, actualValue, fullName, out var _))
                         {
                             if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
                             {
