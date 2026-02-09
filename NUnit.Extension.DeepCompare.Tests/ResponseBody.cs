@@ -16,6 +16,14 @@
 
         public InnerMessage? InnerMessage { get; set; }
 
+        public DateTime CreateDate { get; set; }
+
+        public DateTime? CreateDateNullable { get; set; }
+
+        public DateTimeOffset CreateDateOffset { get; set; }
+
+        public DateTimeOffset? CreateDateOffsetNullable { get; set; }
+
     }
 
     internal class InnerMessage

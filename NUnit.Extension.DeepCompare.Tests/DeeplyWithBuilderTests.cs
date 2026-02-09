@@ -12,7 +12,7 @@ namespace DeepCompare.NUnitExtension.Tests
             {
                 StatusCode = 200,
                 IsSuccess = true,
-                Numbers = new[] { 1, 2, 3 },
+                Numbers = [1, 2, 3],
                 Method = Method.GET
             };
 
@@ -20,7 +20,7 @@ namespace DeepCompare.NUnitExtension.Tests
             {
                 StatusCode = 200,
                 IsSuccess = true,
-                Numbers = new[] { 1, 2, 3 },
+                Numbers = [1, 2, 3],
                 Method = null
             };
 
@@ -76,6 +76,41 @@ namespace DeepCompare.NUnitExtension.Tests
         }
 
         [Test]
+        public void Fluent_PerPropertyTimeSpanTolerance_OverridesGlobalTolerance()
+        {
+            var actual = new TimeHolder { Tolerance = TimeSpan.FromSeconds(3) };
+            var expected = new TimeHolder { Tolerance = TimeSpan.FromSeconds(4) };
+
+            Assert.DoesNotThrow(() =>
+                Assert.That(actual,
+                    Matches.DeeplyWith(expected)
+                        .WithGlobalDateTimeTolerance(TimeSpan.FromSeconds(1))
+                        .WithDateTimeTolerance(nameof(TimeHolder.CreatedAt), TimeSpan.FromSeconds(3))));
+        }
+
+        [Test]
+        public void Fluent_PerPropertyTimeSpanNullableTolerance_OverridesGlobalTolerance()
+        {
+            var actual = new TimeHolder { ToleranceNullable = TimeSpan.FromSeconds(2) };
+            var expected = new TimeHolder { ToleranceNullable = TimeSpan.FromSeconds(5) };
+
+            var ex = Assert.Throws<AssertionException>(() => Assert.That(actual,
+                    Matches.DeeplyWith(expected)
+                        .WithGlobalDateTimeTolerance(TimeSpan.FromSeconds(1))
+                        .WithDateTimeTolerance(nameof(TimeHolder.CreatedAt), TimeSpan.FromSeconds(3))));
+            Assert.That(ex.Message, Does.Contain("Property 'ToleranceNullable' mismatch: Expected '00:00:05', but was '00:00:02'."));
+        }
+
+        [Test]
+        public void TimeSpanTest()
+        {
+            var actual = new TimeHolder { Tolerance = TimeSpan.FromSeconds(3) };
+            var expected = new TimeHolder { Tolerance = TimeSpan.FromSeconds(3) };
+
+            Assert.DoesNotThrow(() => Assert.That(actual, Matches.DeeplyWith(expected)));
+        }
+
+        [Test]
         public void Build_ReturnsConstraint_AndCanBeUsedDirectly()
         {
             var actual = new ResponseBody { IsSuccess = true, Message = "A" };
@@ -91,6 +126,10 @@ namespace DeepCompare.NUnitExtension.Tests
         private class TimeHolder
         {
             public DateTime CreatedAt { get; set; }
+
+            public TimeSpan Tolerance { get; set; }
+
+            public TimeSpan? ToleranceNullable { get; set; }
         }
     }
 }

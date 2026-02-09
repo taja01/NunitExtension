@@ -170,6 +170,18 @@ namespace DeepCompare.NUnitExtension
                     return differences;
                 }
 
+                if (IsTimeSpanLike(expectedType))
+                {
+                    if (!CompareTimeSpanWithTolerance(expected, actual, parentPropertyName, out var matched))
+                    {
+                        if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
+                        {
+                            return differences;
+                        }
+                    }
+                    return differences;
+                }
+
                 if (!Equals(expected, actual))
                 {
                     if (TryAddDifference(differences, (false, parentPropertyName, expected, actual)))
@@ -264,6 +276,18 @@ namespace DeepCompare.NUnitExtension
                     if (IsDateTimeLike(expectedValue.GetType()))
                     {
                         if (!CompareDateTimesWithTolerance(expectedValue, actualValue, fullName, out var matchedDT))
+                        {
+                            if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
+                            {
+                                return differences;
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (IsTimeSpanLike(expectedValue.GetType()))
+                    {
+                        if (!CompareTimeSpanWithTolerance(expectedValue, actualValue, fullName, out var matchedTS))
                         {
                             if (TryAddDifference(differences, (false, fullName, expectedValue, actualValue)))
                             {
@@ -625,6 +649,11 @@ namespace DeepCompare.NUnitExtension
             return t == typeof(DateTime) || t == typeof(DateTime?) || t == typeof(DateTimeOffset) || t == typeof(DateTimeOffset?);
         }
 
+        private static bool IsTimeSpanLike(Type t)
+        {
+            return t == typeof(TimeSpan) || t == typeof(TimeSpan?);
+        }
+
         private bool CompareDateTimesWithTolerance(object expected, object actual, string fullPropertyName, out bool matched)
         {
             matched = false;
@@ -702,6 +731,49 @@ namespace DeepCompare.NUnitExtension
             }
 
             var diff = (expectedDto - actualDto).Duration();
+            matched = diff <= tolerance.Value;
+            return matched;
+        }
+
+        private bool CompareTimeSpanWithTolerance(object expectedValue, object actualValue, string fullPropertyName, out bool matched)
+        {
+            var expectedDto = expectedValue is TimeSpan tsExp ? tsExp : (TimeSpan?)expectedValue;
+            var actualDto = actualValue is TimeSpan tsAct ? tsAct : (TimeSpan?)actualValue;
+
+            // Determine tolerance: per-property override first, then global
+            TimeSpan? tolerance = null;
+            if (_options.DateTimeTolerances.Count > 0)
+            {
+                // exact or suffix match
+                if (_options.DateTimeTolerances.TryGetValue(fullPropertyName, out var tExact))
+                {
+                    tolerance = tExact;
+                }
+                else
+                {
+                    foreach (var kv in _options.DateTimeTolerances)
+                    {
+                        if (fullPropertyName.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase))
+                        {
+                            tolerance = kv.Value;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (tolerance == null)
+            {
+                tolerance = _options.GlobalDateTimeTolerance;
+            }
+
+            if (tolerance == null)
+            {
+                matched = expectedDto.Equals(actualDto);
+                return matched;
+            }
+
+            var diff = (expectedDto - actualDto);
             matched = diff <= tolerance.Value;
             return matched;
         }
