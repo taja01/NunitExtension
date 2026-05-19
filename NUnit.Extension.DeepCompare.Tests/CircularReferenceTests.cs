@@ -210,14 +210,14 @@ namespace DeepCompare.NUnitExtension.Tests
             node1.Next = node2;
             node2.Next = node1;
 
-            var container1 = new Container { Nodes = new List<Node> { node1, node2 } };
+            var container1 = new Container { Nodes = [node1, node2] };
 
             var otherNode1 = new Node { Value = 1 };
             var otherNode2 = new Node { Value = 2 };
             otherNode1.Next = otherNode2;
             otherNode2.Next = otherNode1;
 
-            var container2 = new Container { Nodes = new List<Node> { otherNode1, otherNode2 } };
+            var container2 = new Container { Nodes = [otherNode1, otherNode2] };
 
             // Act & Assert
             Assert.DoesNotThrow(() => Assert.That(container1, Matches.DeeplyWith(container2)));

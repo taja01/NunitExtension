@@ -12,7 +12,7 @@ namespace DeepCompare.NUnitExtension.Tests
             {
                 StatusCode = 200,
                 IsSuccess = true,
-                Numbers = new[] { 1, 2, 3 },
+                Numbers = [1, 2, 3],
                 Method = Method.GET
             };
 
@@ -20,7 +20,7 @@ namespace DeepCompare.NUnitExtension.Tests
             {
                 StatusCode = 200,
                 IsSuccess = true,
-                Numbers = new[] { 1, 2, 3 },
+                Numbers = [1, 2, 3],
                 Method = null
             };
 

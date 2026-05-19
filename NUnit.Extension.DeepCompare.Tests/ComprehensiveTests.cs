@@ -155,11 +155,10 @@ namespace DeepCompare.NUnitExtension.Tests
             public InnerMessage? B { get; set; }
         }
 
-        private class Node
+        private class Node(string name)
         {
-            public string Name { get; set; }
+            public string Name { get; set; } = name;
             public Node? Next { get; set; }
-            public Node(string name) => Name = name;
         }
     }
 }

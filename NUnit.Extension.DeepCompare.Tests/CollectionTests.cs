@@ -8,7 +8,7 @@ namespace DeepCompare.NUnitExtension.Tests
         [Test]
         public void DifferentCollectionTest()
         {
-            var arr = new object[] { };
+            var arr = Array.Empty<object>();
             var list = new List<object>();
 
             Assert.That(arr, Matches.DeeplyWith(list));
