@@ -43,5 +43,28 @@ namespace DeepCompare.NUnitExtension.Tests
             Assert.That(ex.Message, Does.Contain("Property '[1]' mismatch: Expected '1', but was '2'."));
             Assert.That(ex.Message, Does.Contain("Property '[2]' mismatch: Expected '2', but was '3'."));
         }
+
+        [Test]
+        public void WithOptions_CombinesSkipAndDateTimeTolerance()
+        {
+            var expected = new
+            {
+                Timestamp = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                Name = "Ada"
+            };
+
+            var actual = new
+            {
+                Timestamp = new DateTime(2024, 1, 1, 0, 0, 3, DateTimeKind.Utc),
+                Name = "Grace"
+            };
+
+            Assert.DoesNotThrow(() =>
+                Assert.That(actual, Matches.DeeplyWith(expected).WithOptions(o =>
+                {
+                    o.Skip("Name");
+                    o.WithDateTimeTolerance("Timestamp", TimeSpan.FromSeconds(5));
+                })));
+        }
     }
 }
