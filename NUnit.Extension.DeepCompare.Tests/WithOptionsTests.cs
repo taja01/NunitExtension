@@ -26,7 +26,34 @@ namespace DeepCompare.NUnitExtension.Tests
 
             // Use WithOptions to skip the Method property — assertion should not throw.
             Assert.DoesNotThrow(() =>
-                Assert.That(actual, Matches.DeeplyWith(expected).WithOptions(o => o.Skip(nameof(ResponseBody.Method)))));
+                Assert.That(actual, Matches.DeeplyWith(expected).WithOptions(o =>
+                {
+                    o.Skip(nameof(ResponseBody.Method));
+                    o.Skip(nameof(ResponseBody.Id));
+                })));
+        }
+
+        [Test]
+        public void WithOptions_SkipId_DoesNotSkip_IsIdValid_Or_MessageId()
+        {
+            var actual = new ResponseBody
+            {
+                Id = Guid.NewGuid(),
+                IsIdValid = true,
+                MessageId = Guid.Empty
+            };
+
+            var expected = new ResponseBody
+            {
+                Id = Guid.NewGuid(),
+                IsIdValid = false,
+                MessageId = Guid.NewGuid()
+            };
+
+            var ex = Assert.Throws<AssertionException>(() =>
+                Assert.That(actual, Matches.DeeplyWith(expected).WithOptions(o => o.Skip(nameof(ResponseBody.Id)))));
+
+            Assert.That(ex!.Message, Does.Contain("IsIdValid").Or.Contain("MessageId"));
         }
 
         [Test]

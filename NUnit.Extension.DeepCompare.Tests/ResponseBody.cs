@@ -2,6 +2,9 @@
 {
     internal class ResponseBody
     {
+        public Guid Id { get; set; }
+        public Guid MessageId { get; set; }
+        public bool? IsIdValid { get; set; }
         public int StatusCode { get; set; }
 
         public bool IsSuccess { get; set; }

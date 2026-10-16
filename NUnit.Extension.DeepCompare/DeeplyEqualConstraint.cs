@@ -626,22 +626,36 @@ namespace DeepCompare.NUnitExtension
                 return false;
             }
 
-            // exact or suffix match (case-insensitive already via HashSet)
-            if (_options.SkippedProperties.Contains(fullPropertyName))
-            {
-                return true;
-            }
-
-            // suffix match: if any skipped entry matches end of fullPropertyName
             foreach (var skip in _options.SkippedProperties)
             {
-                if (fullPropertyName.EndsWith(skip, StringComparison.OrdinalIgnoreCase))
+                if (PathMatches(fullPropertyName, skip))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static bool PathMatches(string fullPropertyName, string configuredPath)
+        {
+            if (string.IsNullOrWhiteSpace(configuredPath))
+            {
+                return false;
+            }
+
+            if (fullPropertyName.Equals(configuredPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (!fullPropertyName.EndsWith(configuredPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var boundaryIndex = fullPropertyName.Length - configuredPath.Length - 1;
+            return boundaryIndex >= 0 && fullPropertyName[boundaryIndex] == '.';
         }
 
         private static bool IsDateTimeLike(Type t)
